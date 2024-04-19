@@ -1,7 +1,6 @@
 - 👋 Hi, I’m @nico-hoff
-- 👀 I’m interested in Software/Cloud Systems Engineering & Data Science 
-- 🌱 I’m up to build a SaaS Platform
-- 📫 How to reach me ...
+- 👀 I’m interested in Data Engineering & Data Science 
+- 🌱 Building BI Applications 
 
 <!---
 nico-hoff/nico-hoff is a ✨ special ✨ repository because its `README.md` (this file) appears on your GitHub profile.
