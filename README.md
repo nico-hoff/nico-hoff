@@ -1,6 +1,6 @@
 - 👋 Hi, I’m @nico-hoff
 - 👀 I’m interested in Data Engineering & Data Science 
-- 🌱 Building BI Applications 
+- 🌱 Building BI and Node.js Applications 
 
 <!---
 nico-hoff/nico-hoff is a ✨ special ✨ repository because its `README.md` (this file) appears on your GitHub profile.
