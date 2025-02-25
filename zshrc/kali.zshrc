@@ -105,7 +105,7 @@ function mygit() {
     if [[ "$(git config --get oh-my-zsh.hide-status)" != "1" ]]; then
         ref=$(command git symbolic-ref HEAD 2> /dev/null) || \
         ref=$(command git rev-parse --short HEAD 2> /dev/null) || return
-        echo "<git:${ref#refs/heads/}$(git_prompt_status)>"
+        echo "<git:${ref#refs/heads/}$(git_prompt_short_sha)$(git_prompt_status)>"
     fi
 }
 
@@ -185,9 +185,10 @@ configure_prompt() {
     [ "$EUID" -eq 0 ] && prompt_symbol=💀
     case "$PROMPT_ALTERNATIVE" in
         twoline)
-            PROMPT=$'%F{%(#.blue.green)}┌──${debian_chroot:+($debian_chroot)─}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))─}(%B%F{%(#.red.blue)}%n'$prompt_symbol$'%m%b%F{%(#.blue.green)})-[%B%F{reset}%(6~.%-1~/…/%4~.%5~)%b%F{%(#.blue.green)}] - [%B%F{yellow}%D{%Y-%m-%d %H:%M:%S}%b%F{%(#.blue.green)}]\n└─%B[%F{magenta}%?%F{%(#.blue.green)}]%b $(mygit)%(#.#.$)%F{reset} '
+            PROMPT=$'%{$fg_bold[blue]%}┌─[%{$fg_bold[green]%}%n%{$fg[black]%}%{$prompt_symbol%}%{$fg[cyan]%}%m%{$fg_bold[blue]%}]%{$reset_color%} - %{$fg_bold[blue]%}[%{$fg_bold[white]%}%~%{$fg_bold[blue]%}]%{$reset_color%} - %{$fg_bold[blue]%}[%{$fg[yellow]%}%D{%Y-%m-%d %H:%M:%S}%{$fg_bold[blue]%}]
+%{$fg_bold[blue]%}└─[%{$fg_bold[magenta]%}%?%{$fg_bold[blue]%}] $(mygit)%{$reset_color%} '
             # Right-side prompt with exit codes and background processes
-            #RPROMPT=$'%(?.. %? %F{red}%B⨯%b%F{reset})%(1j. %j %F{yellow}%B⚙%b%F{reset}.)'
+            # RPROMPT=$'%(?.. %? %F{red}%B⨯%b%F{reset})%(1j. %j %F{yellow}%B⚙%b%F{reset}.)'
             ;;
         oneline)
             PROMPT=$'${debian_chroot:+($debian_chroot)}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))}%B%F{%(#.red.blue)}%n@%m%b%F{reset}:%B%F{%(#.blue.green)}%~%b%F{reset}%(#.#.$) '
