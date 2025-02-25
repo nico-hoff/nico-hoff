@@ -109,6 +109,75 @@ function mygit() {
     fi
 }
 
+git_prompt_status() {
+  local status=""
+  local dirty=0
+  local untracked=0
+  local staged=0
+  local local_changes=0
+  local remote_ahead=0
+  local remote_behind=0
+
+  if git status --porcelain --ignore-submodules --untracked-files=no 2>/dev/null | read -r _; then
+    dirty=1
+  fi
+
+  if [[ $dirty -eq 1 ]]; then
+    git status --porcelain | while IFS= read -r line; do
+      case "$line" in
+        ??*)
+          case "${line:1:1}" in
+            [DM]) staged=$((staged + 1)) ;;
+            ?) local_changes=$((local_changes + 1)) ;;
+            *) echo "UNKNOWN GIT STATE: $line" >&2 ;;
+          esac
+          ;;
+        ??)
+          case "${line:1:1}" in
+            [DM]) local_changes=$((local_changes + 1)) ;;
+            ?) echo "UNKNOWN GIT STATE: $line" >&2 ;;
+            *) local_changes=$((local_changes + 1)) ;;
+          esac
+          ;;
+        *) untracked=$((untracked + 1)) ;;
+      esac
+    done
+  fi
+
+  local ahead_behind=""
+  if [[ $(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2> /dev/null) != "" ]]; then
+      # Check if the current branch is tracking a remote branch
+      local ahead=$(git rev-list --count --left-only @{u}..HEAD 2> /dev/null)
+      local behind=$(git rev-list --count --right-only @{u}..HEAD 2> /dev/null)
+      if [[ -n "$ahead" && "$ahead" -gt 0 ]]; then
+        remote_ahead=$ahead
+      fi
+      if [[ -n "$behind" && "$behind" -gt 0 ]]; then
+        remote_behind=$behind
+      fi
+    fi
+
+  # Construct the status string based on collected information
+  if [[ $staged -gt 0 ]]; then
+    status+=" %{$fg[green]%}✔$staged%{$reset_color%}"
+  fi
+  if [[ $local_changes -gt 0 ]]; then
+    status+=" %{$fg[yellow]%}✱$local_changes%{$reset_color%}"
+  fi
+  if [[ $untracked -gt 0 ]]; then
+    status+=" %{$fg[blue]%}✈$untracked%{$reset_color%}"
+  fi
+  if [[ $remote_ahead -gt 0 ]]; then
+    status+=" %{$fg[green]%}↑$remote_ahead%{$reset_color%}"
+  fi
+  if [[ $remote_behind -gt 0 ]]; then
+    status+=" %{$fg[red]%}↓$remote_behind%{$reset_color%}"
+  fi
+
+  # Return the status string
+  echo "$status"
+}
+
 configure_prompt() {
     prompt_symbol=@ # ㉿
     # Skull emoji for root terminal
