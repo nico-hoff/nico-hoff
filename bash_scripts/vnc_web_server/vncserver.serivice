@@ -1,0 +1,13 @@
+[Unit]
+Description=TigerVNC Server
+After=network.target
+
+[Service]
+Type=simple
+User=$USER
+ExecStart=/usr/bin/vncserver :1 -geometry 1280x720 -localhost no
+ExecStop=/usr/bin/vncserver -kill :1
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
