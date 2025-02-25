@@ -101,6 +101,11 @@ ZSH_THEME_GIT_PROMPT_UNTRACKED="%{$fg[blue]%}✈"
 ZSH_THEME_GIT_PROMPT_SHA_BEFORE=" %{$fg[blue]%}"
 ZSH_THEME_GIT_PROMPT_SHA_AFTER="%{$reset_color%}"
 
+function git_prompt_short_sha() {
+  local SHA
+  SHA=$(git rev-parse --short HEAD 2> /dev/null) && echo "$ZSH_THEME_GIT_PROMPT_SHA_BEFORE$SHA$ZSH_THEME_GIT_PROMPT_SHA_AFTER"
+}
+
 function mygit() {
     if [[ "$(git config --get oh-my-zsh.hide-status)" != "1" ]]; then
         ref=$(command git symbolic-ref HEAD 2> /dev/null) || \
