@@ -91,6 +91,26 @@ if [ -n "$force_color_prompt" ]; then
     fi
 fi
 
+# Color definitions
+autoload -U colors && colors
+reset_color="%{$reset_color%}"
+fg_black="%{$fg[black]%}"
+fg_red="%{$fg[red]%}"
+fg_green="%{$fg[green]%}"
+fg_yellow="%{$fg[yellow]%}"
+fg_blue="%{$fg[blue]%}"
+fg_magenta="%{$fg[magenta]%}"
+fg_cyan="%{$fg[cyan]%}"
+fg_white="%{$fg[white]%}"
+fg_bold_black="%{$fg_bold[black]%}"
+fg_bold_red="%{$fg_bold[red]%}"
+fg_bold_green="%{$fg_bold[green]%}"
+fg_bold_yellow="%{$fg_bold[yellow]%}"
+fg_bold_blue="%{$fg_bold[blue]%}"
+fg_bold_magenta="%{$fg_bold[magenta]%}"
+fg_bold_cyan="%{$fg_bold[cyan]%}"
+fg_bold_white="%{$fg_bold[white]%}"
+
 # Git prompt configurations
 ZSH_THEME_GIT_PROMPT_ADDED="%{$fg[cyan]%}+"
 ZSH_THEME_GIT_PROMPT_MODIFIED="%{$fg[yellow]%}✱"
