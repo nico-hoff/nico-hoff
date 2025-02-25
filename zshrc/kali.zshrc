@@ -205,15 +205,11 @@ git_prompt_status() {
 
 
 configure_prompt() {
-    prompt_symbol=@ # ㉿
-    # Skull emoji for root terminal
+    prompt_symbol=@
     [ "$EUID" -eq 0 ] && prompt_symbol=💀
     case "$PROMPT_ALTERNATIVE" in
         twoline)
-            PROMPT=$'%{$fg_bold[blue]%}┌─[%{$fg_bold[green]%}%n%{$fg[black]%}%{$prompt_symbol%}%{$fg[cyan]%}%m%{$fg_bold[blue]%}]%{$reset_color%} - %{$fg_bold[blue]%}[%{$fg_bold[white]%}%~%{$fg_bold[blue]%}]%{$reset_color%} - %{$fg_bold[blue]%}[%{$fg[yellow]%}%D{%Y-%m-%d %H:%M:%S}%{$fg_bold[blue]%}]
-%{$fg_bold[blue]%}└─[%{$fg_bold[magenta]%}%?%{$fg_bold[blue]%}] $(mygit)%{$reset_color%} '
-            # Right-side prompt with exit codes and background processes
-            # RPROMPT=$'%(?.. %? %F{red}%B⨯%b%F{reset})%(1j. %j %F{yellow}%B⚙%b%F{reset}.)'
+            PROMPT=$'%{$fg_bold[blue]%}┌─[%{$fg_bold[green]%}%n%{$fg[black]%}'$prompt_symbol'%{$fg[cyan]%}%m%{$fg_bold[blue]%}]%{$reset_color%} - %{$fg_bold[blue]%}[%{$fg_bold[white]%}%~%{$fg_bold[blue]%}]%{$reset_color%} - %{$fg_bold[blue]%}[%{$fg[yellow]%}%D{%Y-%m-%d %H:%M:%S}%{$fg_bold[blue]%}]'$'\n''%{$fg_bold[blue]%}└─[%{$fg_bold[magenta]%}%?%{$fg_bold[blue]%}] $(mygit)%{$reset_color%} '
             ;;
         oneline)
             PROMPT=$'${debian_chroot:+($debian_chroot)}${VIRTUAL_ENV:+($(basename $VIRTUAL_ENV))}%B%F{%(#.red.blue)}%n@%m%b%F{reset}:%B%F{%(#.blue.green)}%~%b%F{reset}%(#.#.$) '
