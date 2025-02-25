@@ -110,7 +110,6 @@ function mygit() {
 }
 
 git_prompt_status() {
-  local status=""
   local dirty=0
   local untracked=0
   local staged=0
@@ -158,25 +157,27 @@ git_prompt_status() {
     fi
 
   # Construct the status string based on collected information
+  local tmp_status=""
   if [[ $staged -gt 0 ]]; then
-    status+=" %{$fg[green]%}✔$staged%{$reset_color%}"
+    tmp_status+=" %{$fg[green]%}✔$staged%{$reset_color%}"
   fi
   if [[ $local_changes -gt 0 ]]; then
-    status+=" %{$fg[yellow]%}✱$local_changes%{$reset_color%}"
+    tmp_status+=" %{$fg[yellow]%}✱$local_changes%{$reset_color%}"
   fi
   if [[ $untracked -gt 0 ]]; then
-    status+=" %{$fg[blue]%}✈$untracked%{$reset_color%}"
+    tmp_status+=" %{$fg[blue]%}✈$untracked%{$reset_color%}"
   fi
   if [[ $remote_ahead -gt 0 ]]; then
-    status+=" %{$fg[green]%}↑$remote_ahead%{$reset_color%}"
+    tmp_status+=" %{$fg[green]%}↑$remote_ahead%{$reset_color%}"
   fi
   if [[ $remote_behind -gt 0 ]]; then
-    status+=" %{$fg[red]%}↓$remote_behind%{$reset_color%}"
+    tmp_status+=" %{$fg[red]%}↓$remote_behind%{$reset_color%}"
   fi
 
   # Return the status string
-  echo "$status"
+  echo "$tmp_status"
 }
+
 
 configure_prompt() {
     prompt_symbol=@ # ㉿
