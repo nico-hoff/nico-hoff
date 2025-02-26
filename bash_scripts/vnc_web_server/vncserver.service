@@ -5,8 +5,8 @@ After=network.target
 [Service]
 Type=simple
 User=pi
-ExecStart=/usr/bin/vncserver :1 -geometry 1280x720 -localhost no -xstartup /home/pi/.vnc/xstartup
-ExecStop=/usr/bin/vncserver -kill :1
+ExecStart=/usr/bin/tightvncserver :1 -geometry 1280x720
+ExecStop=/usr/bin/tightvncserver -kill :1
 Restart=always
 
 [Install]

@@ -6,7 +6,7 @@
 set -e
 
 echo "Updating package list and installing required packages..."
-sudo apt update && sudo apt install -y tigervnc-standalone-server novnc websockify lxde
+sudo apt update && sudo apt install -y tightvncserver novnc websockify
 
 echo "Creating the VNC user directory..."
 mkdir -p ~/.vnc
