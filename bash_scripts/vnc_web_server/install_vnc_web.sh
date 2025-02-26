@@ -6,13 +6,21 @@
 set -e
 
 echo "Updating package list and installing required packages..."
-sudo apt update && sudo apt install -y tigervnc-standalone-server novnc websockify
+sudo apt update && sudo apt install -y tigervnc-standalone-server novnc websockify lxde
 
 echo "Creating the VNC user directory..."
 mkdir -p ~/.vnc
 
-echo "Setting up TigerVNC password..."
-vncpasswd
+# echo "Setting up TigerVNC password..."
+# vncpasswd
+
+echo "Creating xstartup file..."
+cat <<EOL > ~/.vnc/xstartup
+#!/bin/bash
+xrdb $HOME/.Xresources
+startlxde &
+EOL
+chmod +x ~/.vnc/xstartup
 
 echo "Deploying VNC systemd service..."
 sudo cp vncserver.service /etc/systemd/system/vncserver.service
@@ -32,4 +40,4 @@ sudo systemctl enable novnc
 sudo systemctl start novnc
 
 echo "Installation complete."
-echo "You can now access your Kali desktop in your browser at: http://$(hostname -I | awk '{print $1}'):6080/vnc.html"
+echo "You can now access your desktop in your browser at: http://$(hostname -I | awk '{print $1}'):6080/vnc.html"

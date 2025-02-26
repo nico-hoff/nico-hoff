@@ -5,7 +5,7 @@ After=vncserver.service
 [Service]
 ExecStart=/usr/bin/websockify --web /usr/share/novnc/ 6080 localhost:5901
 Restart=always
-User=$USER
+User=pi
 
 [Install]
 WantedBy=multi-user.target
