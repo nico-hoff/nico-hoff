@@ -1,0 +1,18 @@
+[Unit]
+Description=VNC Server for Pi
+After=syslog.target network.target
+
+[Service]
+Type=forking
+User=REPLACE_ME
+WorkingDirectory=REPLACE_HOME
+
+ExecStart=/usr/bin/x11vnc -display :0 -auth guess -forever -loop -noxdamage -repeat -rfbport 5900 -shared -rfbauth REPLACE_HOME/.vnc/passwd -o /var/log/x11vnc.log -pidfile /var/run/x11vnc.pid
+ExecStop=/bin/sh -c 'if [ -f /var/run/x11vnc.pid ]; then kill $(cat /var/run/x11vnc.pid); rm -f /var/run/x11vnc.pid; fi'
+
+Restart=on-failure
+RestartSec=5s
+PIDFile=/var/run/x11vnc.pid
+
+[Install]
+WantedBy=multi-user.target

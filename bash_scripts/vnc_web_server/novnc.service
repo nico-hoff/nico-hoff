@@ -6,7 +6,7 @@ Requires=x11vnc.service
 [Service]
 ExecStart=/usr/bin/websockify --web /usr/share/novnc/ --daemon 6080 localhost:5900
 Restart=always
-User=pi
+User=REPLACE_ME
 
 [Install]
 WantedBy=multi-user.target
