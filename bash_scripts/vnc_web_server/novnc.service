@@ -1,12 +1,14 @@
 [Unit]
 Description=noVNC Web Access
-After=x11vnc.service
-Requires=x11vnc.service
+After=x11vnc.service network.target
 
 [Service]
-ExecStart=/usr/bin/websockify --web /usr/share/novnc/ --daemon 6080 localhost:5900
+Type=simple
+ExecStartPre=/bin/sleep 5
+ExecStart=/usr/bin/websockify --verbose --web /usr/share/novnc/ --daemon 6080 REPLACE_IP:5900
 Restart=always
 User=REPLACE_ME
+WorkingDirectory=/usr/share/novnc
 
 [Install]
 WantedBy=multi-user.target

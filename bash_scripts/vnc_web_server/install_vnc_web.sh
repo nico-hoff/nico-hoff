@@ -23,6 +23,7 @@ fi
 # Get the username and home directory of the person running the script
 INSTALL_USER=$(whoami)
 INSTALL_HOME=$(eval echo ~$INSTALL_USER)
+INSTALL_IP=$(hostname -I | awk '{print $1}')
 
 echo "Detected user: $INSTALL_USER"
 echo "Detected home directory: $INSTALL_HOME"
@@ -38,7 +39,9 @@ sed -e "s|^User=.*|User=$INSTALL_USER|" \
 
 # Modify and copy novnc.service
 echo "Copying and modifying novnc.service..."
-sed "s|^User=.*|User=$INSTALL_USER|" novnc.service | sudo tee /etc/systemd/system/novnc.service > /dev/null
+sed -e "s|REPLACE_IP|$INSTALL_IP|g" \
+    -e "s|REPLACE_USER|$INSTALL_USER|g" \
+    novnc.service | sudo tee /etc/systemd/system/novnc.service > /dev/null
 
 echo "Reloading systemd daemon..."
 sudo systemctl daemon-reload

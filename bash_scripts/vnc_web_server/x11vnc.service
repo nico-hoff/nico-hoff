@@ -4,19 +4,14 @@ After=display-manager.service network.target
 Requires=display-manager.service
 
 [Service]
-Type=forking
 User=REPLACE_ME
 WorkingDirectory=REPLACE_HOME
 
-ExecStartPre=/bin/touch /var/log/x11vnc.log
-ExecStartPre=/bin/chown REPLACE_ME:REPLACE_ME /var/log/x11vnc.log
-ExecStart=/usr/bin/x11vnc -display :0 -auth guess -forever -loop -noxdamage -repeat -rfbport 5900 -shared -o /var/log/x11vnc.log -pidfile /var/run/x11vnc.pid
+ExecStart=/usr/bin/x11vnc -display :0 -forever -rfbport 5900 -shared
 ExecStartPost=/bin/sleep 2
-ExecStop=/bin/sh -c 'pkill x11vnc || true'
 
-Restart=on-failure
+Restart=always
 RestartSec=5s
-PIDFile=/var/run/x11vnc.pid
 
 [Install]
 WantedBy=multi-user.target
