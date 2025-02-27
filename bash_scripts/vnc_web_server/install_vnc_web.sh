@@ -39,8 +39,8 @@ sed -e "s|^User=.*|User=$INSTALL_USER|" \
 
 # Modify and copy novnc.service
 echo "Copying and modifying novnc.service..."
-sed -e "s|REPLACE_IP|$INSTALL_IP|g" \
-    -e "s|REPLACE_USER|$INSTALL_USER|g" \
+sed -e "s|REPLACE_IP|${INSTALL_IP}|g" \
+    -e "s|REPLACE_ME|${INSTALL_USER}|g" \
     novnc.service | sudo tee /etc/systemd/system/novnc.service > /dev/null
 
 echo "Reloading systemd daemon..."
