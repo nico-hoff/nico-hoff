@@ -10,7 +10,7 @@ WorkingDirectory=REPLACE_HOME
 ExecStart=/usr/bin/x11vnc -display :0 -forever -rfbport 5900 -shared
 ExecStartPost=/bin/sleep 2
 
-Restart=always
+Restart=on-failure
 RestartSec=5s
 
 [Install]
