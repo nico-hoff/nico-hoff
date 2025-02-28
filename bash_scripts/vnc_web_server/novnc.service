@@ -7,7 +7,7 @@ Type=simple
 ExecStartPre=/bin/sleep 5
 ExecStart=/usr/bin/websockify --verbose --web /usr/share/novnc/ 6080 REPLACE_IP:5900
 Restart=on-failure
-User=REPLACE_ME
+User=root
 WorkingDirectory=/usr/share/novnc
 
 [Install]

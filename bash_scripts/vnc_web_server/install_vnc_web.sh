@@ -21,8 +21,7 @@ fi
 # fi
 
 # Get the username and home directory of the person running the script
-# INSTALL_USER=$(whoami)
-INSTALL_USER=root
+INSTALL_USER=$(whoami)
 INSTALL_HOME=$(eval echo ~$INSTALL_USER)
 INSTALL_IP=$(hostname -I | awk '{print $1}')
 
@@ -31,17 +30,13 @@ echo "Detected home directory: $INSTALL_HOME"
 
 
 echo "Setting up VNC and noVNC services..."
-
 # Modify and copy x11vnc.service
-echo "Copying and modifying x11vnc.service..."
-sed -e "s|^User=.*|User=$INSTALL_USER|" \
-    -e "s|^WorkingDirectory=.*|WorkingDirectory=$INSTALL_HOME|" \
-    -e "s|/home/pi|$INSTALL_HOME|g" x11vnc.service | sudo tee /etc/systemd/system/x11vnc.service > /dev/null
+echo "Deploying x11vnc.service..."
+sudo cp x11vnc.service /etc/systemd/system/
 
 # Modify and copy novnc.service
 echo "Copying and modifying novnc.service..."
 sed -e "s|REPLACE_IP|${INSTALL_IP}|g" \
-    -e "s|REPLACE_ME|${INSTALL_USER}|g" \
     novnc.service | sudo tee /etc/systemd/system/novnc.service > /dev/null
 
 echo "Reloading systemd daemon..."
@@ -55,8 +50,12 @@ echo "Restarting and enabling noVNC service..."
 sudo systemctl enable --now novnc
 sudo systemctl restart novnc
 
+echo "Restaring and enabling hostname dns serivce..."
+sudo systemctl start avahi-daemon
+sudo systemctl enable avahi-daemon
+
 # Add VNC access message to ~/.zshrc
-VNC_MSG="echo \"You can now access your desktop in your browser at: http://\$(hostname -I | awk '{print \$1}'):6080/vnc.html\""
+VNC_MSG="echo \"You can access the desktop in your browser at: http://\$(hostname):6080/vnc.html\""
 
 if ! grep -Fxq "$VNC_MSG" "$INSTALL_HOME/.zshrc"; then
     echo "Adding VNC access message to ~/.zshrc..."
@@ -66,7 +65,7 @@ else
 fi
 
 # Ensure correct ownership in case script is run with sudo
-sudo chown "$INSTALL_USER":"$INSTALL_USER" "$INSTALL_HOME/.zshrc"
+sudo chown "$(whoami)":"$(whoami)" "$INSTALL_HOME/.zshrc"
 
 # Confirm that services are running
 echo "Checking service status..."
@@ -83,4 +82,4 @@ else
 fi
 
 echo "Installation complete."
-echo "You can now access your desktop in your browser at: http://$(hostname -I | awk '{print $1}'):6080/vnc.html"
+eval $VNC_MSG

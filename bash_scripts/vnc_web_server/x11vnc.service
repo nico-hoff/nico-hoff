@@ -4,8 +4,8 @@ After=display-manager.service network.target
 Requires=display-manager.service
 
 [Service]
-User=REPLACE_ME
-WorkingDirectory=REPLACE_HOME
+User=root
+WorkingDirectory=/root
 
 ExecStart=/usr/bin/x11vnc -display :0 -forever -rfbport 5900 --listen 0.0.0.0 -shared -nopw -auth guess
 ExecStartPost=/bin/sleep 2
