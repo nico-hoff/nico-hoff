@@ -1,3 +1,5 @@
+#!/home/pi/Desktop/nico-hoff/python/venv/bin python3
+
 import time
 import psutil
 import matplotlib.pyplot as plt
