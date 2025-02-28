@@ -22,7 +22,8 @@ fi
 # fi
 
 # Get the username and home directory of the person running the script
-INSTALL_USER=$(whoami)
+# INSTALL_USER=$(whoami)
+INSTALL_USER=root
 INSTALL_HOME=$(eval echo ~$INSTALL_USER)
 INSTALL_IP=$(hostname -I | awk '{print $1}')
 
@@ -56,7 +57,7 @@ sudo systemctl enable --now novnc
 sudo systemctl restart novnc
 
 # Add VNC access message to ~/.zshrc
-VNC_MSG='echo "You can now access your desktop in your browser at: http://$(hostname -I | awk \047{print $1}\047):6080/vnc.html"'
+VNC_MSG="echo \"You can now access your desktop in your browser at: http://\$(hostname -I | awk '{print \$1}'):6080/vnc.html\""
 
 if ! grep -Fxq "$VNC_MSG" "$INSTALL_HOME/.zshrc"; then
     echo "Adding VNC access message to ~/.zshrc..."
