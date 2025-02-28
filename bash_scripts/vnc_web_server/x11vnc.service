@@ -7,7 +7,7 @@ Requires=display-manager.service
 User=root
 WorkingDirectory=/root
 
-ExecStart=/usr/bin/x11vnc -display :0 -forever -rfbport 5900 --listen 0.0.0.0 -shared -nopw -auth guess
+ExecStart=/usr/bin/x11vnc -display :0 -forever -rfbport 5900 --listen 0.0.0.0 -shared -nopw -auth guess -xkb
 ExecStartPost=/bin/sleep 2
 
 Restart=on-failure
