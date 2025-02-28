@@ -6,19 +6,27 @@
 set -e
 
 echo "Checking for required packages..."
-# if ! dpkg -l | grep -qE 'x11vnc|novnc|websockify'; then
-read -p "Required packages are missing. Do you want to install x11vnc, novnc, and websockify? (y/n) " -n 1 -r user_response
-echo
+MISSING_PKGS=""
 
-if [[ $user_response == "y" ]]; then
-    echo "Updating package list and installing required packages..."
-    sudo apt update && sudo apt install -y x11vnc novnc websockify
-else 
-    echo "Skipping package installation."
+# Check for missing packages
+for pkg in x11vnc novnc websockify; do
+    dpkg -s "$pkg" >/dev/null 2>&1 || MISSING_PKGS="$MISSING_PKGS $pkg"
+done
+
+# Install if missing
+if [ -n "$MISSING_PKGS" ]; then
+    echo "The following packages are missing:$MISSING_PKGS"
+    echo "Do you want to install them? (y/n) "
+    read user_response
+    if [ "$user_response" = "y" ]; then
+        echo "Updating package list and installing:$MISSING_PKGS"
+        sudo apt update && sudo apt install -y $MISSING_PKGS
+    else
+        echo "Skipping package installation."
+    fi
+else
+    echo "✅ All required packages are already installed."
 fi
-# else
-#     echo "All required packages are already installed."
-# fi
 
 # Get the username and home directory of the person running the script
 INSTALL_USER=$(whoami)
