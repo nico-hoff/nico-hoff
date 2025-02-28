@@ -1,6 +1,7 @@
 - 👋 Hi, I’m @nico-hoff
 - 👀 I’m interested in Data Engineering & Data Science 
 - 🌱 Building BI and Node.js Applications
+- 🤓 Modding my Raspberry Pi (Ubuntu / Kali Linux)
 - ⟬ ⟭ My favorit Oh My ZSH Theme ```rkj-repos```
 
 <!---
