@@ -14,8 +14,7 @@ if [[ $user_response == "y" ]]; then
     echo "Updating package list and installing required packages..."
     sudo apt update && sudo apt install -y x11vnc novnc websockify
 else 
-    echo "Skipping package installation. Exiting..."
-    exit 1
+    echo "Skipping package installation."
 fi
 # else
 #     echo "All required packages are already installed."
