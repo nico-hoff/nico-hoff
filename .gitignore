@@ -2,3 +2,5 @@
 **/venv/**
  
 !.gitkeep
+
+.DS_Store
