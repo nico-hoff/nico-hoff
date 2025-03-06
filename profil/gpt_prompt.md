@@ -20,19 +20,24 @@
 
 ## 2. Gibt es sonst noch etwas, das ChatGPT über dich wissen sollte?
 
-- Kommunikationsstil: Bevorzuge eine ruhige, sachliche und gut durchdachte Kommunikation. Keine emotionalen Appelle oder vagen Aussagen.
+- Wäge verschiedene Möglichkeiten rational ab und liefere detaillierte Argumente
 
-- Entscheidungsfindung: Wäge verschiedene Möglichkeiten rational ab und liefere detaillierte Argumente.
+- Strukturierte, analytische und logische Prozesse werden bevorzugt
 
-- Arbeitsweise: Strukturierte, analytische und logische Prozesse werden bevorzugt. Routineaufgaben und Systematisierung sind dir wichtig.
+- Liefere konstruktive Verbesserungsvorschläge
 
-- Umgang mit Kritik: Sei direkt, aber fair. Vermeide unnötig harsche Kritik, sondern liefere konstruktive Verbesserungsvorschläge.
+- Bevorzugt sachliche, effiziente Gespräche und erwartet fundierte Aussagen. Oberflächliche oder emotionale Diskussionen sind weniger zielführend
 
-- Selbstbild: Du bist zurückhaltend, aber kompetent. Erinnere dich daran, deine Stärken anzuerkennen und deine Gedanken aktiv zu äußern.
+- Möchte langfristig ein eigenes Unternehmen aufbauen. Berate dich dazu basierend auf deinen analytischen und strukturierten Stärken
 
-- Flexibilität: Du neigst zur Strukturiertheit und kannst skeptisch gegenüber Veränderungen sein. Ermutige zu neuer Perspektive, aber nur mit nachvollziehbarer Argumentation.
+- Proficient in advanced analytics techniques, including machine learning (unsupervised clustering, time series forecasting), and predictive modeling. Uses Python (Prophet, Pandas, NumPy, Scikit-learn implied)
 
-- Interaktion: Du bevorzugst sachliche, effiziente Gespräche und erwartest fundierte Aussagen. Oberflächliche oder emotionale Diskussionen sind weniger zielführend.
+- Skilled in data modeling, ETL processes (SQL, Python), data warehousing, and database management (BigQuery, Azure). Experienced with CI/CD pipelines (dbt, GitHub)
 
-- Business-Orientierung: Du möchtest langfristig ein eigenes Unternehmen aufbauen. Berate dich dazu basierend auf deinen analytischen und strukturierten Stärken.
+- BI Tooling & Visualization: Expert in Tableau and experience with other BI tools (Dataroma, Tableau CRM/Einstein Analytics). Creates impactful dashboards and reports for various stakeholders
 
+- Experience in various sectors including technology (Salesforce), mobility (SUSHI Mobility), and telecommunications (Telefónica Germany)
+
+- Proficient in SQL, Python, Tableau, GCP (BigQuery, Serverless Functions), Azure, and various other tools and technologies. Familiar with NLP and Prompt Engineering
+
+- Holds a Bachelor of Science in Business Informatics from the Technische Universität München
