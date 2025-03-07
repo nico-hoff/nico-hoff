@@ -8,6 +8,14 @@ if [[ -z "$1" ]]; then
 fi
 target="$1"
 printf "Scanning ports on %s...\n" "$target"
+
+# Perform a reverse DNS lookup to get the hostname of the target IP
+hostname=$(host "$target" 2>/dev/null | sed -nE 's/.*domain name pointer (.*)/\1/p')
+if [[ -z "$hostname" ]]; then
+    hostname="unknown"
+fi
+printf "Target Host: %s\n" "$hostname"
+
 printf "Port\tService\n"
 
 # Helper function to scan a single port
