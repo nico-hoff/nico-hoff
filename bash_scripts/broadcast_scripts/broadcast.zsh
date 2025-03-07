@@ -3,6 +3,14 @@
 # This script scans the local network (192.168.178.0/24) by pinging each host,
 # performs a reverse DNS lookup for each that responds,
 # and prints the results in a tabular format: IP, Name, Time.
+#
+# Usage: ./broadcast.zsh [-t <ping_timeout>] 
+# (Other parameters are auto-detected; use -t to override the ping timeout in seconds)
+#
+# Detailed Explanation:
+# - The "-t" flag (optional) sets the ping timeout in milliseconds (default: 1).
+# - The script auto-detects the local network, prints the router and caller IP,
+#   and scans hosts concurrently.
 
 # Detect default gateway and network interface (macOS compatible)
 gateway=$(route -n get default 2>/dev/null | awk '/gateway: / {print $2}')
@@ -53,28 +61,51 @@ fi
 # Compute network prefix (assumes IPv4; using first three octets for a /24)
 network_prefix=$(echo "$local_ip" | awk -F. '{print $1"."$2"."$3}')
 
+# Default ping timeout (in milliseconds)
+ping_timeout=1000
+
+# Parse any custom flag for ping timeout
+while getopts ":t:" opt; do
+  case $opt in
+    t)
+      ping_timeout="$OPTARG" * 1000
+      ;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      exit 1
+      ;;
+  esac
+done
+
 # Print router IP and network characteristics
 printf "Router IP: %s\n" "$gateway"
+printf "Caller IP: %s\n" "$local_ip"
 if command -v ipcalc >/dev/null; then
     ipcalc "$local_ip/$cidr"
 else
     printf "Network: %s.0, CIDR: /%s\n" "$network_prefix" "$cidr"
 fi
 
-# Print header for scan results
-printf "\nIP\tName\tTime\n"
+# Print header for scan results (cleaner table format)
+printf "\n%-16s %-35s %-8s\n" "IP" "Name" "Time"
 
 # Helper function for ping and reverse DNS lookup (runs in background)
 do_ping() {
     ip="$1"
-    output=$(ping -c 1 -W 1 "$ip" 2>/dev/null)
+    output=$(ping -c 1 -W "$ping_timeout" "$ip" 2>/dev/null)
     if [[ $? -eq 0 ]]; then
-        ping_time=$(echo "$output" | sed -nE 's/.*time=([0-9.]+).*/\1/p')
+        # Extract the ping response time (e.g., "3.235 ms") from output
+        ping_time=$(echo "$output" | sed -nE 's/.*time=([0-9.]+)[[:space:]]?ms.*/\1 ms/p')
         name=$(host "$ip" 2>/dev/null | sed -nE 's/.*domain name pointer (.*)/\1/p')
         if [[ -z "$name" ]]; then
             name="unknown"
         fi
-        printf "%s\t%s\t%s\n" "$ip" "$name" "$ping_time"
+        # Print row with fixed-width columns
+        printf "%-16s %-35s %-8s\n" "$ip" "$name" "$ping_time"
     fi
 }
 
