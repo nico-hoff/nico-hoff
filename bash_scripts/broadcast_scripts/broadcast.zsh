@@ -62,7 +62,7 @@ fi
 network_prefix=$(echo "$local_ip" | awk -F. '{print $1"."$2"."$3}')
 
 # Default ping timeout (in milliseconds)
-ping_timeout=1000
+ping_timeout=10000
 
 # Parse any custom flag for ping timeout
 while getopts ":t:" opt; do
@@ -82,7 +82,9 @@ while getopts ":t:" opt; do
 done
 
 # Print router IP and network characteristics
-printf "Router IP: %s\n" "$gateway"
+printf "\n"
+printf "Network Interface: %s\n" "$interface"
+printf "Default Gateway: %s\n" "$gateway"
 printf "Caller IP: %s\n" "$local_ip"
 if command -v ipcalc >/dev/null; then
     ipcalc "$local_ip/$cidr"
@@ -91,7 +93,7 @@ else
 fi
 
 # Print header for scan results (cleaner table format)
-printf "\n%-16s %-35s %-8s\n" "IP" "Name" "Time"
+printf "\n%-20s %-35s %-8s\n" "IP" "Name" "Time"
 
 # Helper function for ping and reverse DNS lookup (runs in background)
 do_ping() {
@@ -100,12 +102,22 @@ do_ping() {
     if [[ $? -eq 0 ]]; then
         # Extract the ping response time (e.g., "3.235 ms") from output
         ping_time=$(echo "$output" | sed -nE 's/.*time=([0-9.]+)[[:space:]]?ms.*/\1 ms/p')
-        name=$(host "$ip" 2>/dev/null | sed -nE 's/.*domain name pointer (.*)/\1/p')
+        name=$(host "$ip" 2>/dev/null | head -n 1 | sed -nE 's/.*domain name pointer (.*)/\1/p')
+        if [[ -n "$name" ]]; then
+            name=$(echo "$name" | tr '\n' ' and ')
+        fi
+
         if [[ -z "$name" ]]; then
             name="unknown"
+        else
+            # Truncate name if longer than 13 characters and add "..."
+            if [[ ${#name} -gt 30 ]]; then
+              name="${name:0:27}..."
+            fi
         fi
         # Print row with fixed-width columns
-        printf "%-16s %-35s %-8s\n" "$ip" "$name" "$ping_time"
+        printf "%-20s %-35s %-8s\n" "$ip" "$name" "$ping_time"
+
     fi
 }
 
@@ -115,3 +127,4 @@ for i in {1..254}; do
     do_ping "$ip" &
 done
 wait
+
