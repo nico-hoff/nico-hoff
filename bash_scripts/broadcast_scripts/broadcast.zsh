@@ -62,7 +62,7 @@ fi
 network_prefix=$(echo "$local_ip" | awk -F. '{print $1"."$2"."$3}')
 
 # Default ping timeout (in milliseconds)
-ping_timeout=10000
+ping_timeout=1000
 
 # Parse any custom flag for ping timeout
 while getopts ":t:" opt; do
@@ -134,3 +134,5 @@ for (( i=1; i<num_hosts-1; i++ )); do
 done
 
 wait
+
+echo ""
