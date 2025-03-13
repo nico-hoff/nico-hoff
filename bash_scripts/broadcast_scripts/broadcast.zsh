@@ -1,10 +1,10 @@
 #!/bin/zsh
 # network_scan.zsh
-# This script scans the local network (192.168.178.0/24) by pinging each host,
+# This script scans the local network by pinging each host,
 # performs a reverse DNS lookup for each that responds,
 # and prints the results in a tabular format: IP, Name, Time.
 #
-# Usage: ./broadcast.zsh [-t <ping_timeout>] 
+# Usage: ./broadcast.zsh [-t <ping_timeout>]
 # (Other parameters are auto-detected; use -t to override the ping timeout in seconds)
 #
 # Detailed Explanation:
@@ -103,14 +103,11 @@ do_ping() {
         # Extract the ping response time (e.g., "3.235 ms") from output
         ping_time=$(echo "$output" | sed -nE 's/.*time=([0-9.]+)[[:space:]]?ms.*/\1 ms/p')
         name=$(host "$ip" 2>/dev/null | head -n 1 | sed -nE 's/.*domain name pointer (.*)/\1/p')
-        if [[ -n "$name" ]]; then
-            name=$(echo "$name" | tr '\n' ' and ')
-        fi
 
         if [[ -z "$name" ]]; then
             name="unknown"
         else
-            # Truncate name if longer than 13 characters and add "..."
+            # Truncate name if longer than 30 characters and add "..."
             if [[ ${#name} -gt 30 ]]; then
               name="${name:0:27}..."
             fi
@@ -121,10 +118,19 @@ do_ping() {
     fi
 }
 
-# Loop over IP addresses concurrently using the computed network prefix (assuming /24)
-for i in {1..254}; do
-    ip="$network_prefix.$i"
+# Calculate the number of hosts in the subnet (2^bits)
+num_hosts=$((2**(32-cidr)))
+
+# Iterate over all hosts in the calculated subnet (excluding network and broadcast addresses)
+for (( i=1; i<num_hosts-1; i++ )); do
+    # Calculate the last octet of the current IP address
+    last_octet=$i
+
+    # Construct the full IP address
+    ip="$network_prefix.$last_octet"
+
+    # call the do_ping Function for every ip
     do_ping "$ip" &
 done
-wait
 
+wait
