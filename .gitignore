@@ -1,6 +1,6 @@
 
 **/venv/**
- 
+*.log 
 !.gitkeep
 
 .DS_Store
