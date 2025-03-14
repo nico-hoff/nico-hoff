@@ -10,3 +10,6 @@ psutil==7.0.0
 pyparsing==3.2.1
 python-dateutil==2.9.0.post0
 six==1.17.0
+mistralai
+ipykernel
+python-dotenv
