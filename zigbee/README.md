@@ -1,4 +1,4 @@
-# Install zigbee etc.
+# Install Zigbee etc.
 
 
 ## 1. Install prerequisites: Open a terminal and run the following commands to update your system and install necessary packages:
@@ -11,7 +11,7 @@ sudo apt install git curl -y
 
 ## 2. Install Node.js: Zigbee2mqtt requires Node.js. Install it using the following commands:
 ```bash
-curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
+curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt install -y nodejs
 ```
 
@@ -40,29 +40,30 @@ sudo pnpm run build
 ```
 
 ## 4. Configure Zigbee2mqtt: Create a configuration file:
-```bash
-sudo nano /opt/zigbee2mqtt/data/configuration.yaml
-```
 
-Add this to your config.txt as `/boot/config.txt` or `/boot/firmware/config.txt` (Ubuntu)
+Add this to your config.txt as `/boot/config.txt` or `/boot/firmware/config.txt` (Ubuntu) to enable serial detection.
 
 ```bash
 enable_uart=1
 dtoverlay=pi3-miniuart-bt
 ```
 
-Add the following configuration, replacing YOUR_SERIAL_PORT with the serial port of your HM-MOD-RPI-PCB (usually /dev/ttyAMA0):
+Add the following configuration, replacing YOUR_SERIAL_PORT with the serial port of your module (usually /dev/ttyAMA0):
+```bash
+sudo nano /opt/zigbee2mqtt/data/configuration.yaml
+```
 
+If unkown do this and look for enabled
 
 ```bash
 sudo dmesg | grep tty
 ```
 
-> [    0.000454] printk: legacy console [tty0] enabled
+>[    1.514346] fe201000.serial: ttyAMA0 at MMIO 0xfe201000 (irq = 37, base_baud = 0) is a PL011 rev2
 >
-> [    1.541729] fe201000.serial: ttyAMA1 at MMIO 0xfe201000 (irq = 36, base_baud = 0) is a PL011 rev2
->
-> [    1.542688] serial serial0: tty port ttyAMA1 registered
+>[    1.514969] printk: legacy console [ttyAMA0] enabled
+
+and check with 
 
 ```bash
 ls /dev/tty*
@@ -75,6 +76,7 @@ mqtt:
   base_topic: zigbee2mqtt
   server: 'mqtt://localhost'
 serial:
+  adapter: ADAPTER
   port: YOUR_SERIAL_PORT
 ```
 
@@ -109,6 +111,10 @@ sudo journalctl -u zigbee2mqtt -f
 ```bash
 mosquitto_pub -t 'zigbee2mqtt/bridge/request/permit_join' -m 'true'
 ```
+
+## Abort
+
+HomeMatic is not compatible with Zigbee
 
 ### Error Logging
 
