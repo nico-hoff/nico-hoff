@@ -16,3 +16,4 @@ pandas
 seaborn
 tensorflow
 scikit-learn
+tqdm
