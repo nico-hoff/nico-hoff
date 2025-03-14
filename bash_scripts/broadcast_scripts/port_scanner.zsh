@@ -30,7 +30,8 @@ case $range in
         ;;
 esac
 
-printf "\nScanning ports on %s (range: %s: %s-%s)..." "$target" "$range" "$port_start" "$port_end"
+total_ports=$((port_end - port_start + 1))
+printf "\nScanning ports on %s" "$target"
 
 # Perform a reverse DNS lookup to get the hostname of the target IP
 hostname=$(host "$target" 2>/dev/null | sed -nE 's/.*domain name pointer (.*)/\1/p')
@@ -39,7 +40,10 @@ if [[ -z "$hostname" ]]; then
 fi
 printf "\nTarget Host: %s" "$hostname"
 
-printf "\n\n   Port\tService\n"
+# Table header remains fixed
+printf "\nIn Port Range: %s-%s (%s ports)\n" "$port_start" "$port_end" "$total_ports"
+
+printf "\n   Port\tService\n"
 
 # Helper function to scan a single port
 do_scan() {
@@ -75,4 +79,5 @@ for port in $(seq $port_start $port_end); do
     fi
 done
 wait
-echo ""
+
+printf "\n"
