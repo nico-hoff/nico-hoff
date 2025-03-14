@@ -3,7 +3,7 @@
 *.log 
 .env
 .DS_Store
-bash_scripts/heat/graphs/*
+# bash_scripts/heat/graphs/*
 bash_scripts/heat/data/*
 
 !.gitkeep

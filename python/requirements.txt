@@ -14,3 +14,5 @@ ipykernel
 python-dotenv
 pandas
 seaborn
+tensorflow
+scikit-learn

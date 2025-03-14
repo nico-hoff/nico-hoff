@@ -13,7 +13,7 @@ plt.title('Temperature Distribution')
 plt.ylabel('Temperature')
 plt.grid(True, axis='y', linestyle='--', alpha=0.7)
 plt.tight_layout()
-plt.savefig(f'graphs/temperature_boxplot_{i+1}.png')
+plt.savefig(f'graphs/temperature_boxplot_total.png')
 plt.show()
 
 # Filter the dataframe for rows where the timestamp is equal to today
@@ -40,6 +40,9 @@ dfs = split_dataframe(df)
 
 # Plot each dataframe
 for i, df_split in enumerate(dfs):
+    # Save the segmented data to CSV
+    df_split.to_csv(f'data/temperature_data_{i}.csv', index=False)
+    
     # Compute rolling average and Bollinger bands
     df_split['rolling_avg'] = df_split['temp'].rolling(window=20, min_periods=1).mean()
     df_split['rolling_std'] = df_split['temp'].rolling(window=20, min_periods=1).std()
