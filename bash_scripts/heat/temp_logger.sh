@@ -1,6 +1,11 @@
 #!/bin/bash
-# Log file where JSON objects will be appended
-LOGFILE="./temp_log.json"
+# Log file where CSV rows will be appended
+LOGFILE="/home/pi/Desktop/nico-hoff/bash_scripts/heat/data/temp_log.csv"
+
+# Ensure the CSV file has a header if it doesn't exist
+if [ ! -f "$LOGFILE" ]; then
+    echo "timestamp,temp" > "$LOGFILE"
+fi
 
 while true; do
     # Extract the temperature value from the 'temp1:' line and clean it up:
@@ -8,17 +13,17 @@ while true; do
     temp_num=$(sensors | grep -m1 "temp1:" | awk '{gsub("[^0-9.-]", "", $2); print $2}')
     
     # Format the number as a float with one decimal using awk
-    temp_float=$(awk -v num="$temp_num" 'BEGIN {printf "%.1f", num}')
+    temp_float=$(awk -v num="$temp_num" 'BEGIN {printf "%.1f", num}' | tr ',' '.')
     
     # Get the current timestamp in ISO 8601 format
     timestamp=$(date --iso-8601=seconds)
     
-    # Build the JSON object including a measure_type field.
-    json="{\"timestamp\": \"${timestamp}\", \"temp\": ${temp_float}, \"measure_type\": \"temperature\"}"
+    # Build the CSV row
+    csv_row="${timestamp},${temp_float}"
     
-    # Append the JSON object to the log file
-    echo "$json" >> "$LOGFILE"
+    # Append the CSV row to the log file
+    echo "$csv_row" >> "$LOGFILE"
     
-    # Wait for 5 seconds before the next log entry
-    sleep 5
+    # Wait for 1 second before the next log entry
+    sleep 1
 done

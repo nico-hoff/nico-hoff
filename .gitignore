@@ -1,6 +1,9 @@
 
 **/venv/**
 *.log 
-!.gitkeep
 .env
 .DS_Store
+bash_scripts/heat/graphs/*
+bash_scripts/heat/data/*
+
+!.gitkeep

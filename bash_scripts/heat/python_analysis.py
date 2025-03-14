@@ -1,74 +1,64 @@
-#!/usr/bin/env python3
-import json
-import re
-from datetime import datetime
+import pandas as pd
+import seaborn as sns
 import matplotlib.pyplot as plt
+from datetime import datetime, timedelta
 
-def main():
-    log_file = "temp_log.json"  # Path to your log file
-    timestamps = []
-    temperatures = []
+# Load the data
+df = pd.read_csv('data/temp_log.csv', parse_dates=['timestamp'])
 
-    with open(log_file, "r") as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            
-            # Preprocess the line:
-            # Replace the comma in the "temp" value (e.g., "temp": 61,0) with a dot.
-            # This regex handles an optional negative sign.
-            line_fixed = re.sub(r'("temp":\s*)(-?\d+),(\d+)', r'\1\2.\3', line)
-            
-            try:
-                entry = json.loads(line_fixed)
-            except json.JSONDecodeError:
-                print(f"Skipping invalid JSON line: {line_fixed}")
-                continue
+# Boxplot for temperature distribution
+plt.figure(figsize=(6, 4))
+sns.boxplot(y=df['temp'])
+plt.title('Temperature Distribution')
+plt.ylabel('Temperature')
+plt.grid(True, axis='y', linestyle='--', alpha=0.7)
+plt.tight_layout()
+plt.savefig(f'graphs/temperature_boxplot_{i+1}.png')
+plt.show()
 
-            ts = entry.get("timestamp")
-            temp = entry.get("temp")
+# Filter the dataframe for rows where the timestamp is equal to today
+today = datetime.now().date()
+df = df[df['timestamp'].dt.date == today]
 
-            if not ts or temp is None:
-                continue
+# Define a function to split the dataframe based on gaps in the timestamps
+def split_dataframe(df, gap_threshold=timedelta(minutes=1)):
+    dataframes = []
+    current_df = [df.iloc[0]]
+    
+    for i in range(1, len(df)):
+        if df.iloc[i]['timestamp'] - df.iloc[i-1]['timestamp'] > gap_threshold:
+            dataframes.append(pd.DataFrame(current_df))
+            current_df = [df.iloc[i]]
+        else:
+            current_df.append(df.iloc[i])
+    
+    dataframes.append(pd.DataFrame(current_df))
+    return dataframes
 
-            # Parse the ISO 8601 timestamp
-            try:
-                dt = datetime.fromisoformat(ts)
-            except Exception as e:
-                print(f"Skipping invalid timestamp '{ts}': {e}")
-                continue
+# Split the dataframe
+dfs = split_dataframe(df)
 
-            # Convert temperature to float (it should already be fixed by our regex)
-            try:
-                temp = float(temp)
-            except ValueError:
-                print(f"Skipping invalid temperature '{temp}'")
-                continue
-
-            timestamps.append(dt)
-            temperatures.append(temp)
-
-    if not timestamps:
-        print("No valid data found in the log.")
-        return
-
-    # Sort data by timestamp
-    timestamps, temperatures = zip(*sorted(zip(timestamps, temperatures)))
-
-    # Plotting the data
-    plt.figure(figsize=(10, 6))
-    plt.plot(timestamps, temperatures, linestyle='-')
-    plt.xlabel('Time')
-    plt.ylabel('Temperature (°C)')
-    plt.title('Temperature Over Time')
+# Plot each dataframe
+for i, df_split in enumerate(dfs):
+    # Compute rolling average and Bollinger bands
+    df_split['rolling_avg'] = df_split['temp'].rolling(window=20, min_periods=1).mean()
+    df_split['rolling_std'] = df_split['temp'].rolling(window=20, min_periods=1).std()
+    df_split['bollinger_upper'] = df_split['rolling_avg'] + (3 * df_split['rolling_std'])
+    df_split['bollinger_lower'] = df_split['rolling_avg'] - (3 * df_split['rolling_std'])
+    
+    plt.figure(figsize=(10, 5))
+    # Plot original temperature
+    sns.lineplot(x=df_split['timestamp'], y=df_split['temp'], color='black',linestyle='-', label='Temperature', alpha=0.1)
+    # Plot rolling average
+    sns.lineplot(x=df_split['timestamp'], y=df_split['rolling_avg'], color='orange', label='Rolling Avg (t=20)')
+    # Plot Bollinger Bands as a filled area
+    plt.fill_between(df_split['timestamp'], df_split['bollinger_lower'], df_split['bollinger_upper'], color='grey', alpha=0.3, label='Bollinger Bands (std*3)')
+    
+    plt.title(f'Temperature Plot {i+1}')
+    plt.xlabel('Timestamp')
+    plt.ylabel('Temperature')
     plt.grid(True)
-    plt.gcf().autofmt_xdate()  # Auto-format x-axis dates
-
-    # Save the figure as a PNG file
-    output_file = "temp_plot.png"
-    plt.savefig(output_file)
-    print(f"Graph saved as {output_file}")
-
-if __name__ == "__main__":
-    main()
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(f'graphs/temperature_plot_{i+1}.png')
+    plt.show()
