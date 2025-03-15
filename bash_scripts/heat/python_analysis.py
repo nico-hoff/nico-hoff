@@ -75,6 +75,7 @@ def plot_time_window(i, df, minutes, title_suffix, window_size):
     ax2.set_title(f'CPU Frequency - Last {title_suffix}')
     ax2.set_xlabel('Timestamp')
     ax2.set_ylabel('MHz')
+    ax2.set_ylim(0, 2500)  # Set y-axis limits
     ax2.grid(True)
     ax2.legend()
 

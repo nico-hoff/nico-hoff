@@ -9,10 +9,10 @@ from datetime import timedelta
 import os
 import getpass
 
-# intense_ratio = 0.01 # less intense training
-intense_ratio = 0.0001 # more intense training 
-# training_ratio = 0.01 # Default
-training_ratio = 0.002 # Default
+intense_ratio = 0.01 # less intense training
+# intense_ratio = 0.002 # more intense training 
+training_ratio = 0.01 # Default
+# training_ratio = 0.002 # Default # more intense training
 
 # Hilfsfunktion zur Erstellung von Sequenzen für das LSTM-Modell
 def prepare_sequences(data, timestamps, seq_length):
