@@ -1,6 +1,7 @@
 
 sudo apt update
 sudo apt install lm-sensors -y
+sudo apt install sysstat -y
 sudo apt install -y gnuplot
 
 sudo sensors-detect
