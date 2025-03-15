@@ -1,9 +1,17 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense
-from tensorflow.keras.optimizers import Adam
+try:
+    from tensorflow.keras.models import Sequential
+    from tensorflow.keras.layers import LSTM, Dense
+    from tensorflow.keras.optimizers import Adam
+except ImportError:
+    print("Installing tensorflow-aarch64...")
+    import subprocess
+    subprocess.check_call(["pip3", "install", "tensorflow-aarch64", "-f", "https://tf.kmtea.eu/whl/stable.html"])
+    from tensorflow_aarch64.keras.models import Sequential
+    from tensorflow_aarch64.keras.layers import LSTM, Dense
+    from tensorflow_aarch64.keras.optimizers import Adam
 import matplotlib.pyplot as plt
 from datetime import timedelta
 import os
