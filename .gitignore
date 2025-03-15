@@ -4,6 +4,6 @@ venv/**
 .env
 .DS_Store
 # bash_scripts/heat/graphs/*
-bash_scripts/heat/data/*
+bash_scripts/heat/data/**/*.csv
 
 !.gitkeep
