@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from tqdm import tqdm
 import os
 import argparse
+import getpass
 
 # Add argument parsing
 parser = argparse.ArgumentParser(description='Temperature analysis script')
@@ -29,7 +30,9 @@ ax2.set_ylabel('MHz')
 ax2.grid(True, axis='y', linestyle='--', alpha=0.7)
 
 plt.tight_layout()
-plt.savefig(f'graphs/boxplot_total.png')
+os_user = getpass.getuser()
+os.makedirs(f'graphs/{os_user}', exist_ok=True)
+plt.savefig(f'graphs/{os_user}/boxplot_total.png')
 plt.show()
 
 # Defining helper function for saving the last x minutes of data
@@ -78,7 +81,7 @@ def plot_time_window(i, df, minutes, title_suffix, window_size):
     plt.xticks(rotation=45)
     plt.tight_layout()
     
-    save_path = f'graphs/plot_{i}_{title_suffix}.png'
+    save_path = f'graphs/{os_user}/plot_{i}_{title_suffix}.png'
     plt.savefig(save_path)
     plt.show()
 
