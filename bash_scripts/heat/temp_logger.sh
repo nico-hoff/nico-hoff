@@ -1,5 +1,12 @@
 #!/bin/bash
-LOGFILE="/home/pi/Desktop/nico-hoff/bash_scripts/heat/data/raw/temp_log_multi.csv"
+
+# Use absolute path, normalized to remove double slashes
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+LOGFILE="${SCRIPT_DIR}/data/raw/temp_log_multi.csv"
+
+# Create directory if it doesn't exist
+target_dir=$(dirname "$LOGFILE")
+mkdir -p "$target_dir"
 
 # Ensure the CSV file has a header if it doesn't exist
 if [ ! -f "$LOGFILE" ]; then
