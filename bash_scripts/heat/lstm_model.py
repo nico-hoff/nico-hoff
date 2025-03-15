@@ -130,23 +130,26 @@ if __name__ == "__main__":
     model_load, scalers_load, history_load = train_lstm_with_regressor(df, 'cpu_load_percent')
     
     # Train with both CPU metrics
-    print("\nTraining with both CPU metrics...")
+    print("\nTraining with both CPU metrics and fan status...")
     # Prepare data for combined features
     temp_data = df['temp'].values.reshape(-1, 1)
     mhz_data = df['MHz'].values.reshape(-1, 1)
     load_data = df['cpu_load_percent'].values.reshape(-1, 1)
+    fan_data = df['fan_on_off'].values.reshape(-1, 1)
     
     # Scale all features
     temp_scaler = MinMaxScaler()
     mhz_scaler = MinMaxScaler()
     load_scaler = MinMaxScaler()
+    fan_scaler = MinMaxScaler()
     
     temp_scaled = temp_scaler.fit_transform(temp_data)
     mhz_scaled = mhz_scaler.fit_transform(mhz_data)
     load_scaled = load_scaler.fit_transform(load_data)
+    fan_scaled = fan_scaler.fit_transform(fan_data)
     
     # Combine all features
-    combined_data = np.hstack((temp_scaled, mhz_scaled, load_scaled))
+    combined_data = np.hstack((temp_scaled, mhz_scaled, load_scaled, fan_scaled))
     
     # Create sequences for combined features
     sequence_length = 60
@@ -171,7 +174,7 @@ if __name__ == "__main__":
     
     # Build and train model with all features
     model_combined = Sequential([
-        LSTM(50, activation='relu', input_shape=(sequence_length, 3)),
+        LSTM(50, activation='relu', input_shape=(sequence_length, 4)),  # Changed to 4 features
         Dense(1)
     ])
     
