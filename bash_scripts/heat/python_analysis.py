@@ -4,26 +4,37 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from tqdm import tqdm
 import os
+import argparse
+
+# Add argument parsing
+parser = argparse.ArgumentParser(description='Temperature analysis script')
+parser.add_argument('-f', '--full', action='store_true', help='Run analysis for all time windows')
+args = parser.parse_args()
 
 # Load the data
 print("\nLoading data...")
-df = pd.read_csv('data/raw/temp_log.csv', parse_dates=['timestamp'])
+df = pd.read_csv('data/raw/temp_log_multi.csv', parse_dates=['timestamp'])
 
-# Boxplot for temperature distribution
-print("Plotting temperature distribution...")
-plt.figure(figsize=(6, 4))
-sns.boxplot(y=df['temp'])
-plt.title('Temperature Distribution')
-plt.ylabel('Temperature')
-plt.grid(True, axis='y', linestyle='--', alpha=0.7)
+# Boxplot for temperature and MHz distribution
+print("Plotting distributions...")
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+sns.boxplot(y=df['temp'], ax=ax1)
+ax1.set_title('Temperature Distribution')
+ax1.set_ylabel('Temperature')
+ax1.grid(True, axis='y', linestyle='--', alpha=0.7)
+
+sns.boxplot(y=df['avg_mhz'], ax=ax2)
+ax2.set_title('CPU Frequency Distribution')
+ax2.set_ylabel('MHz')
+ax2.grid(True, axis='y', linestyle='--', alpha=0.7)
+
 plt.tight_layout()
 plt.savefig(f'graphs/boxplot_total.png')
 plt.show()
 
 # Defining helper function for saving the last x minutes of data
 def plot_time_window(i, df, minutes, title_suffix, window_size):
-
-    # Calculate rolling statistics
+    # Calculate rolling statistics for temperature
     df['rolling_avg'] = df['temp'].rolling(window=window_size).mean()
     df['rolling_std'] = df['temp'].rolling(window=window_size).std()
     df['bollinger_upper'] = df['rolling_avg'] + (3 * df['rolling_std'])
@@ -33,26 +44,37 @@ def plot_time_window(i, df, minutes, title_suffix, window_size):
     if len(window_df) == 0:
         return
 
-    window_df = window_df.dropna()  # Drop NaN values before plotting
+    window_df = window_df.dropna()
 
-    plt.figure(figsize=(10, 5))
+    # Create figure with two subplots
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(12, 8), sharex=True)
+
+    # Temperature plot
     sns.lineplot(x=window_df['timestamp'], y=window_df['temp'], 
-                color='black', linestyle='-', label='Temperature', alpha=0.1)
+                color='black', linestyle='-', label='Temperature', alpha=0.1, ax=ax1)
     sns.lineplot(x=window_df['timestamp'], y=window_df['rolling_avg'], 
-                color='orange', label=f'Rolling Avg (window={window_size})')
-    plt.fill_between(window_df['timestamp'], 
+                color='orange', label=f'Rolling Avg (window={window_size})', ax=ax1)
+    ax1.fill_between(window_df['timestamp'], 
                     window_df['bollinger_lower'], 
                     window_df['bollinger_upper'],
                     color='grey', alpha=0.3, label=f'Bollinger Bands (±3σ, window={window_size})')
+    ax1.set_title(f'Temperature Plot - Last {title_suffix}')
+    ax1.set_ylabel('Temperature')
+    ax1.grid(True)
+    ax1.legend()
 
-    plt.title(f'Temperature Plot - Last {title_suffix} (Rolling Window: {window_size})')
-    plt.xlabel('Timestamp')
-    plt.ylabel('Temperature')
-    plt.grid(True)
+    # MHz plot
+    sns.lineplot(x=window_df['timestamp'], y=window_df['avg_mhz'], 
+                color='blue', label='CPU Frequency', ax=ax2)
+    ax2.set_title(f'CPU Frequency - Last {title_suffix}')
+    ax2.set_xlabel('Timestamp')
+    ax2.set_ylabel('MHz')
+    ax2.grid(True)
+    ax2.legend()
+
     plt.xticks(rotation=45)
     plt.tight_layout()
     
-    # Save to window-specific directory
     save_path = f'graphs/plot_{i}_{title_suffix}.png'
     plt.savefig(save_path)
     plt.show()
@@ -68,7 +90,13 @@ time_windows = {
 
 # Plot different time windows
 print("Plotting temperature time windows...")
-for i, (window_name, settings) in enumerate(tqdm(time_windows.items(), desc="Rendering Time Windows")):
+if args.full:
+    windows_to_plot = time_windows
+else:
+    # Only use first two time windows if -f is not set
+    windows_to_plot = dict(list(time_windows.items())[:2])
+
+for i, (window_name, settings) in enumerate(tqdm(windows_to_plot.items(), desc="Rendering Time Windows")):
     plot_time_window(
         i,
         df,
