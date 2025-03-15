@@ -17,23 +17,18 @@ def prepare_sequences(data, timestamps, seq_length):
     return np.array(X), np.array(y), pd.DatetimeIndex(time_index)  # Use DatetimeIndex
 
 def train_basic_lstm(df, sequence_length=20):
-    # Get last 4 hours of data
-    last_timestamp = df['timestamp'].max()
-    start_timestamp = last_timestamp - timedelta(hours=4)
-    df_filtered = df[df['timestamp'] >= start_timestamp].copy()
-    
-    # Prepare data
-    data = df_filtered['temp'].values.reshape(-1, 1)
-    timestamps = df_filtered['timestamp'].values
+    # Prepare data without time filtering
+    data = df['temp'].values.reshape(-1, 1)
+    timestamps = df['timestamp'].values
     scaler = MinMaxScaler()
     data_scaled = scaler.fit_transform(data)
     
     # Create sequences with timestamps
     X, y, time_index = prepare_sequences(data_scaled, timestamps, sequence_length)
     
-    # Split into train (50%), validation (30%), test (20%)
-    train_size = int(len(X) * 0.5)
-    val_size = int(len(X) * 0.3)
+    # Split into train (70%), validation (15%), test (15%)
+    train_size = int(len(X) * 0.7)
+    val_size = int(len(X) * 0.15)
     
     X_train = X[:train_size]
     y_train = y[:train_size]
@@ -42,30 +37,46 @@ def train_basic_lstm(df, sequence_length=20):
     X_test = X[train_size+val_size:]
     y_test = y[train_size+val_size:]
     
-    # Build model
+    # Build model with more capacity
     model = Sequential([
-        LSTM(16, activation='relu', input_shape=(sequence_length, 1)),  # reduced from 50
+        LSTM(16, activation='relu', input_shape=(sequence_length, 1), 
+             dropout=0.2, recurrent_dropout=0.2),
         Dense(1)
     ])
     
     model.compile(optimizer=Adam(learning_rate=0.001), loss='mse')
     
-    # Train with reduced epochs and larger batch size
+    # Print model summary
+    print("\nModel Architecture:")
+    model.summary()
+    
+    print(f"\nTraining Data Shape: {X_train.shape}")
+    print(f"Validation Data Shape: {X_val.shape}")
+    print(f"Test Data Shape: {X_test.shape}")
+    
+    # Train with more epochs and adjusted batch size
     history = model.fit(
         X_train, y_train,
         validation_data=(X_val, y_val),
-        epochs=15,  # reduced from 50
-        batch_size=64,  # increased from 32
-        verbose=1
+        epochs=50,  # increased epochs
+        batch_size=32,  # adjusted batch size for better gradient updates
+        verbose=1,
+        validation_split=0.2,  # additional validation split
+        shuffle=True
     )
     
-    # Evaluate
-    test_loss = model.evaluate(X_test, y_test, verbose=0)
-    print(f'Test MSE: {test_loss}')
+    # Detailed evaluation
+    test_loss = model.evaluate(X_test, y_test, verbose=1)
+    print(f'\nFinal Test MSE: {test_loss:.6f}')
+    
+    # Print training history summary
+    print("\nTraining History Summary:")
+    print(f"Best validation loss: {min(history.history['val_loss']):.6f}")
+    print(f"Final training loss: {history.history['loss'][-1]:.6f}")
     
     return model, scaler, history
 
-def train_lstm_with_regressor(df, regressor_col, sequence_length=20):  # reduced from 60
+def train_lstm_with_regressor(df, regressor_col, sequence_length=20):
     # Prepare data
     temp_data = df['temp'].values.reshape(-1, 1)
     reg_data = df[regressor_col].values.reshape(-1, 1)
@@ -89,9 +100,9 @@ def train_lstm_with_regressor(df, regressor_col, sequence_length=20):  # reduced
     X = np.array(X)
     y = np.array(y)
     
-    # Split data
-    train_size = int(len(X) * 0.5)
-    val_size = int(len(X) * 0.3)
+    # Adjust split ratios
+    train_size = int(len(X) * 0.7)
+    val_size = int(len(X) * 0.15)
     
     X_train = X[:train_size]
     y_train = y[:train_size]
@@ -100,42 +111,54 @@ def train_lstm_with_regressor(df, regressor_col, sequence_length=20):  # reduced
     X_test = X[train_size+val_size:]
     y_test = y[train_size+val_size:]
     
-    # Build model
+    # Build model with more capacity
     model = Sequential([
-        LSTM(16, activation='relu', input_shape=(sequence_length, 2)),  # reduced from 50
+        LSTM(32, activation='relu', input_shape=(sequence_length, 2), 
+             return_sequences=True),
+        LSTM(16, activation='relu'),
         Dense(1)
     ])
     
     model.compile(optimizer=Adam(learning_rate=0.001), loss='mse')
     
-    # Train with reduced epochs and larger batch size
+    # Print model summary
+    print("\nModel Architecture:")
+    model.summary()
+    
+    # Train with increased epochs and adjusted batch size
     history = model.fit(
         X_train, y_train,
         validation_data=(X_val, y_val),
-        epochs=15,  # reduced from 50
-        batch_size=64,  # increased from 32
-        verbose=1
+        epochs=50,  # increased epochs
+        batch_size=32,  # adjusted for better gradient updates
+        verbose=1,
+        shuffle=True,
+        validation_split=0.2
     )
     
-    # Evaluate
-    test_loss = model.evaluate(X_test, y_test, verbose=0)
-    print(f'Test MSE: {test_loss}')
+    # Detailed evaluation
+    test_loss = model.evaluate(X_test, y_test, verbose=1)
+    print(f'\nFinal Test MSE: {test_loss:.6f}')
     
     return model, (temp_scaler, reg_scaler), history
 
 def forecast_future(model, last_sequence, steps, scaler):
-    """Forecast future temperature values"""
+    """Forecast future temperature values in batches"""
     current_sequence = last_sequence.copy()
     future_predictions = []
-
-    for _ in range(steps):
-        # Get prediction for next step
-        next_pred = model.predict(current_sequence.reshape(1, current_sequence.shape[0], current_sequence.shape[1]))
-        future_predictions.append(next_pred[0])
+    
+    # Create batch of sequences for prediction
+    prediction_sequences = np.tile(current_sequence, (steps, 1, 1))
+    
+    # Make predictions in a single batch
+    for i in range(steps):
+        next_pred = model.predict(prediction_sequences[:i+1], verbose=0)  # suppress progress bar
+        future_predictions.append(next_pred[-1])
         
-        # Update sequence by removing first element and adding prediction
-        current_sequence = np.roll(current_sequence, -1, axis=0)
-        current_sequence[-1] = next_pred
+        # Update sequences for next iteration
+        if i < steps - 1:
+            prediction_sequences[i+1:, :-1] = prediction_sequences[i+1:, 1:]
+            prediction_sequences[i+1:, -1] = next_pred[-1]
 
     return np.array(future_predictions)
 
@@ -184,6 +207,7 @@ def make_predictions(model, scaler, X_test, y_test, timestamps_test):
 if __name__ == "__main__":
     print("\nLoading data...")
     df = pd.read_csv('data/raw/temp_log_2.csv', parse_dates=['timestamp'])
+    print(f"Total samples in dataset: {len(df)}")
     
     print("\nTraining basic LSTM model...")
     model, scaler, history = train_basic_lstm(df)
