@@ -35,6 +35,7 @@ plt.show()
 # Defining helper function for saving the last x minutes of data
 def plot_time_window(i, df, minutes, title_suffix, window_size):
     # Calculate rolling statistics for temperature
+    df['mhz_rolling_avg'] = df['avg_mhz'].rolling(window=window_size).mean()
     df['rolling_avg'] = df['temp'].rolling(window=window_size).mean()
     df['rolling_std'] = df['temp'].rolling(window=window_size).std()
     df['bollinger_upper'] = df['rolling_avg'] + (3 * df['rolling_std'])
@@ -51,9 +52,9 @@ def plot_time_window(i, df, minutes, title_suffix, window_size):
 
     # Temperature plot
     sns.lineplot(x=window_df['timestamp'], y=window_df['temp'], 
-                color='black', linestyle='-', label='Temperature', alpha=0.1, ax=ax1)
+                color='black', linestyle='-', label='Temperature', alpha=0.1, ax=ax1, linewidth=2)
     sns.lineplot(x=window_df['timestamp'], y=window_df['rolling_avg'], 
-                color='orange', label=f'Rolling Avg (window={window_size})', ax=ax1)
+                color='orange', label=f'Rolling Avg (window={window_size})', ax=ax1, linewidth=2.5)
     ax1.fill_between(window_df['timestamp'], 
                     window_df['bollinger_lower'], 
                     window_df['bollinger_upper'],
@@ -65,7 +66,9 @@ def plot_time_window(i, df, minutes, title_suffix, window_size):
 
     # MHz plot
     sns.lineplot(x=window_df['timestamp'], y=window_df['avg_mhz'], 
-                color='blue', label='CPU Frequency', ax=ax2)
+                color='blue', label='CPU Frequency', alpha=0.1, ax=ax2, linewidth=2)
+    sns.lineplot(x=window_df['timestamp'], y=window_df['mhz_rolling_avg'], 
+                color='blue', label='Avg CPU Frequency', ax=ax2, linewidth=2.5)
     ax2.set_title(f'CPU Frequency - Last {title_suffix}')
     ax2.set_xlabel('Timestamp')
     ax2.set_ylabel('MHz')

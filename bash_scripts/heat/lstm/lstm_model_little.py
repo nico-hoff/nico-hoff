@@ -7,229 +7,204 @@ from tensorflow.keras.optimizers import Adam
 import matplotlib.pyplot as plt
 from datetime import timedelta
 
-def prepare_sequences(data, timestamps, seq_length):
-    X, y = [], []
-    time_index = []
-    for i in range(len(data) - seq_length):
-        X.append(data[i:(i + seq_length)])
-        y.append(data[i + seq_length])
-        time_index.append(pd.to_datetime(timestamps[i + seq_length]))  # Convert to pandas datetime
-    return np.array(X), np.array(y), pd.DatetimeIndex(time_index)  # Use DatetimeIndex
+# intense_ratio = 0.01 # less intense training
+intense_ratio = 0.0001 # more intense training 
+# training_ratio = 0.01 # Default
+training_ratio = 0.002 # Default
 
-def train_basic_lstm(df, sequence_length=20):
-    # Prepare data without time filtering
-    data = df['temp'].values.reshape(-1, 1)
+# Hilfsfunktion zur Erstellung von Sequenzen für das LSTM-Modell
+def prepare_sequences(data, timestamps, seq_length):
+    print(f"\nPreparing sequences with length {seq_length}...")
+    X, y, time_index = [], [], []
+    total_sequences = len(data) - seq_length
+    for i in range(total_sequences):
+        if i % (total_sequences // 10) == 0:  # Progress update every 10%
+            print(f"Processing sequences: {(i/total_sequences)*100:.1f}% complete")
+        X.append(data[i:(i + seq_length)])
+        y.append(data[i + seq_length, 0])
+        time_index.append(pd.to_datetime(timestamps[i + seq_length]))
+    print("Sequence preparation complete!")
+    return np.array(X), np.array(y), pd.DatetimeIndex(time_index)
+
+# Funktion zur Berechnung optimaler Trainingsparameter
+def calculate_training_params(dataset_length, intense_ratio=0.01):
+    print("\nCalculating optimal training parameters...")
+    ratio = intense_ratio
+    batch_size = min(max(int(np.sqrt(dataset_length) * ratio * 10), 16), 128)
+    batch_size = int(batch_size / 8) * 8  # Batch-Größe für optimale Performance anpassen
+    epochs = min(max(int(np.log10(dataset_length) * (1/ratio)), 5), 50)
+    print(f"Calculated parameters: batch_size={batch_size}, epochs={epochs}")
+    return epochs, batch_size
+
+# Trainingsfunktion für LSTM-Modell mit Temperatur- und MHz-Wert als Features
+def train_lstm(df, sequence_length=20, training_ratio=training_ratio):
+    print("\nInitializing LSTM training process...")
+    print(f"Dataset size: {len(df)} rows")
+    print(f"Sequence length: {sequence_length}")
+    
+    print("\nExtracting and scaling features...")
+    data = df[['temp', 'avg_mhz']].values
     timestamps = df['timestamp'].values
-    scaler = MinMaxScaler()
-    data_scaled = scaler.fit_transform(data)
     
-    # Create sequences with timestamps
+    # Skalierung der Features
+    scaler_temp, scaler_mhz = MinMaxScaler(), MinMaxScaler()
+    data_scaled = np.column_stack((
+        scaler_temp.fit_transform(data[:, 0].reshape(-1, 1)),
+        scaler_mhz.fit_transform(data[:, 1].reshape(-1, 1))
+    ))
+    print("Feature scaling complete!")
+
+    # Erstellung von Sequenzen
     X, y, time_index = prepare_sequences(data_scaled, timestamps, sequence_length)
-    
-    # Split into train (70%), validation (15%), test (15%)
+
+    print("\nSplitting dataset...")
     train_size = int(len(X) * 0.7)
     val_size = int(len(X) * 0.15)
-    
-    X_train = X[:train_size]
-    y_train = y[:train_size]
-    X_val = X[train_size:train_size+val_size]
-    y_val = y[train_size:train_size+val_size]
-    X_test = X[train_size+val_size:]
-    y_test = y[train_size+val_size:]
-    
-    # Build model with more capacity
+    print(f"Training set size: {train_size}")
+    print(f"Validation set size: {val_size}")
+    print(f"Test set size: {len(X) - train_size - val_size}")
+
+    X_train, y_train = X[:train_size], y[:train_size]
+    X_val, y_val = X[train_size:train_size + val_size], y[train_size:train_size + val_size]
+    X_test, y_test = X[train_size + val_size:], y[train_size + val_size:]
+
+    print("\nBuilding LSTM model...")
     model = Sequential([
-        LSTM(16, activation='relu', input_shape=(sequence_length, 1), 
-             dropout=0.2, recurrent_dropout=0.2),
+        LSTM(32, activation='relu', input_shape=(sequence_length, 2), dropout=0.2, recurrent_dropout=0.2),
+        Dense(16, activation='relu'),
         Dense(1)
     ])
-    
     model.compile(optimizer=Adam(learning_rate=0.001), loss='mse')
-    
-    # Print model summary
-    print("\nModel Architecture:")
+    print("Model architecture:")
     model.summary()
-    
-    print(f"\nTraining Data Shape: {X_train.shape}")
-    print(f"Validation Data Shape: {X_val.shape}")
-    print(f"Test Data Shape: {X_test.shape}")
-    
-    # Train with more epochs and adjusted batch size
+
+    # Trainingsparameter berechnen
+    epochs, batch_size = calculate_training_params(len(df), training_ratio)
+
+    print("\nStarting model training...")
+    # Modell trainieren
     history = model.fit(
         X_train, y_train,
         validation_data=(X_val, y_val),
-        epochs=50,  # increased epochs
-        batch_size=32,  # adjusted batch size for better gradient updates
+        epochs=epochs,
+        batch_size=batch_size,
         verbose=1,
-        validation_split=0.2,  # additional validation split
         shuffle=True
     )
-    
-    # Detailed evaluation
-    test_loss = model.evaluate(X_test, y_test, verbose=1)
-    print(f'\nFinal Test MSE: {test_loss:.6f}')
-    
-    # Print training history summary
-    print("\nTraining History Summary:")
-    print(f"Best validation loss: {min(history.history['val_loss']):.6f}")
-    print(f"Final training loss: {history.history['loss'][-1]:.6f}")
-    
-    return model, scaler, history
 
-def train_lstm_with_regressor(df, regressor_col, sequence_length=20):
-    # Prepare data
-    temp_data = df['temp'].values.reshape(-1, 1)
-    reg_data = df[regressor_col].values.reshape(-1, 1)
-    
-    # Scale both features
-    temp_scaler = MinMaxScaler()
-    reg_scaler = MinMaxScaler()
-    
-    temp_scaled = temp_scaler.fit_transform(temp_data)
-    reg_scaled = reg_scaler.fit_transform(reg_data)
-    
-    # Combine features
-    combined_data = np.hstack((temp_scaled, reg_scaled))
-    
-    # Create sequences
-    X, y = [], []
-    for i in range(len(combined_data) - sequence_length):
-        X.append(combined_data[i:(i + sequence_length)])
-        y.append(temp_scaled[i + sequence_length])
-    
-    X = np.array(X)
-    y = np.array(y)
-    
-    # Adjust split ratios
-    train_size = int(len(X) * 0.7)
-    val_size = int(len(X) * 0.15)
-    
-    X_train = X[:train_size]
-    y_train = y[:train_size]
-    X_val = X[train_size:train_size+val_size]
-    y_val = y[train_size:train_size+val_size]
-    X_test = X[train_size+val_size:]
-    y_test = y[train_size+val_size:]
-    
-    # Build model with more capacity
-    model = Sequential([
-        LSTM(32, activation='relu', input_shape=(sequence_length, 2), 
-             return_sequences=True),
-        LSTM(16, activation='relu'),
-        Dense(1)
-    ])
-    
-    model.compile(optimizer=Adam(learning_rate=0.001), loss='mse')
-    
-    # Print model summary
-    print("\nModel Architecture:")
-    model.summary()
-    
-    # Train with increased epochs and adjusted batch size
-    history = model.fit(
-        X_train, y_train,
-        validation_data=(X_val, y_val),
-        epochs=50,  # increased epochs
-        batch_size=32,  # adjusted for better gradient updates
-        verbose=1,
-        shuffle=True,
-        validation_split=0.2
-    )
-    
-    # Detailed evaluation
+    print("\nEvaluating model on test set...")
+    # Modell bewerten
     test_loss = model.evaluate(X_test, y_test, verbose=1)
-    print(f'\nFinal Test MSE: {test_loss:.6f}')
-    
-    return model, (temp_scaler, reg_scaler), history
+    print(f'Final Test MSE: {test_loss:.6f}')
 
-def forecast_future(model, last_sequence, steps, scaler):
-    """Forecast future temperature values in batches"""
+    return model, (scaler_temp, scaler_mhz), history
+
+# Funktion zur Vorhersage zukünftiger Werte
+def forecast_future(model, last_sequence, steps, scaler, mean_mhz):
+    print(f"\nGenerating future forecast for {steps} steps...")
     current_sequence = last_sequence.copy()
     future_predictions = []
-    
-    # Create batch of sequences for prediction
-    prediction_sequences = np.tile(current_sequence, (steps, 1, 1))
-    
-    # Make predictions in a single batch
-    for i in range(steps):
-        next_pred = model.predict(prediction_sequences[:i+1], verbose=0)  # suppress progress bar
-        future_predictions.append(next_pred[-1])
-        
-        # Update sequences for next iteration
-        if i < steps - 1:
-            prediction_sequences[i+1:, :-1] = prediction_sequences[i+1:, 1:]
-            prediction_sequences[i+1:, -1] = next_pred[-1]
 
+    # Scale the mean MHz value
+    scaled_mhz = scaler[1].transform([[mean_mhz]])[0][0]
+
+    for step in range(steps):
+        if step % (steps // 5) == 0:  # Progress update every 20%
+            print(f"Forecasting progress: {(step/steps)*100:.1f}%")
+        next_pred = model.predict(current_sequence[np.newaxis, :, :], verbose=0)
+        future_predictions.append(next_pred[0])
+
+        # Verschieben der Sequenz und Einfügen neuer Werte
+        current_sequence = np.roll(current_sequence, -1, axis=0)
+        current_sequence[-1, 0] = next_pred[0]  # Temperatur aktualisieren
+        current_sequence[-1, 1] = scaled_mhz    # MHz auf Durchschnitt setzen
+
+    print("Forecast generation complete!")
     return np.array(future_predictions)
 
-def make_predictions(model, scaler, X_test, y_test, timestamps_test):
-    # Make predictions for test data
+# Funktion zur Modellvorhersage und Visualisierung der Ergebnisse
+def make_predictions(model, scaler, X_test, y_test, timestamps_test, mean_mhz):
+    print("\nMaking predictions on test data...")
     predictions = model.predict(X_test)
-    
-    # Calculate forecast steps (1/3 of total steps)
+
+    print("\nGenerating future predictions...")
     forecast_steps = len(predictions) // 3
-    
-    # Get the last sequence for forecasting
     last_sequence = X_test[-1]
-    future_pred = forecast_future(model, last_sequence, forecast_steps, scaler)
-    
-    # Inverse transform predictions
-    predictions = scaler.inverse_transform(predictions)
-    y_test = scaler.inverse_transform(y_test)
-    future_pred = scaler.inverse_transform(future_pred)
-    
-    # Create future timestamps
-    last_timestamp = pd.to_datetime(timestamps_test[-1])  # Convert to pandas datetime
-    future_timestamps = pd.date_range(
-        start=last_timestamp, 
-        periods=forecast_steps + 1, 
-        freq='S'
-    )[1:]  # exclude start to avoid duplicate
-    
-    # Plot results
+    future_pred = forecast_future(model, last_sequence, forecast_steps, scaler, mean_mhz)
+
+    print("\nInverse transforming scaled values...")
+    # Inverse Transformation der Skalierten Werte
+    predictions = scaler[0].inverse_transform(predictions.reshape(-1, 1))
+    y_test = scaler[0].inverse_transform(y_test.reshape(-1, 1))
+    future_pred = scaler[0].inverse_transform(future_pred.reshape(-1, 1))
+
+    print("\nPreparing visualization...")
+    # Zeitachsen für Prognosen erstellen
+    last_timestamp = pd.to_datetime(timestamps_test[-1])
+    future_timestamps = pd.date_range(start=last_timestamp, periods=forecast_steps + 1, freq='S')[1:]
+
+    print("Creating prediction plot...")
+    # Ergebnisse visualisieren
     plt.figure(figsize=(12, 6))
-    plt.plot(timestamps_test, y_test, label='Actual Temperature', color='blue')
-    plt.plot(timestamps_test, predictions, label='Predicted Temperature', color='red', alpha=0.7)
-    plt.plot(future_timestamps, future_pred, label='Forecasted Temperature', 
-             color='green', linestyle='--', alpha=0.7)
-    plt.axvline(x=last_timestamp, color='gray', linestyle=':', label='Forecast Start')
-    plt.title('Temperature Prediction and Forecast (Last 4 Hours)')
-    plt.xlabel('Time')
-    plt.ylabel('Temperature (°C)')
+    plt.plot(timestamps_test, y_test, label='Echte Temperatur', color='blue')
+    plt.plot(timestamps_test, predictions, label='Vorhersage', color='red', alpha=0.7)
+    plt.plot(future_timestamps, future_pred, label='Prognose', color='green', linestyle='--', alpha=0.7)
+    plt.axvline(x=last_timestamp, color='gray', linestyle=':', label='Prognose-Start')
+    plt.title('Temperaturvorhersage')
+    plt.xlabel('Zeit')
+    plt.ylabel('Temperatur (°C)')
     plt.legend()
     plt.grid(True)
-    plt.gcf().autofmt_xdate()  # Rotate and align the tick labels
-    plt.savefig('temperature_prediction.png')
+    plt.gcf().autofmt_xdate()
+    print("Saving plot to 'graphs/temperature_prediction.png'...")
+    plt.savefig('graphs/temperature_prediction.png')
     plt.close()
-    
+
     return predictions, y_test, future_pred
 
 if __name__ == "__main__":
+    print("\n" + "="*50)
+    print("Temperature Prediction Model Training")
+    print("="*50)
+    
     print("\nLoading data...")
-    df = pd.read_csv('data/raw/temp_log_2.csv', parse_dates=['timestamp'])
-    print(f"Total samples in dataset: {len(df)}")
-    
-    print("\nTraining basic LSTM model...")
-    model, scaler, history = train_basic_lstm(df)
-    
-    # Prepare test data for last 4 hours
+    df = pd.read_csv('data/raw/temp_log_multi.csv', parse_dates=['timestamp'])
+    print(f"Dataset loaded successfully with {len(df)} records")
+
+    print("\nInitiating LSTM model training...")
+    model, (scaler_temp, scaler_mhz), history = train_lstm(df, training_ratio=0.01)
+
+    print("\nPreparing test data from last 4 hours...")
     last_timestamp = df['timestamp'].max()
     start_timestamp = last_timestamp - timedelta(hours=4)
     df_filtered = df[df['timestamp'] >= start_timestamp].copy()
-    
-    data = df_filtered['temp'].values.reshape(-1, 1)
-    data_scaled = scaler.transform(data)
+    print(f"Test dataset size: {len(df_filtered)} records")
+
+    data = df_filtered[['temp', 'avg_mhz']].values
+    data_scaled = np.column_stack((
+        scaler_temp.transform(data[:, 0].reshape(-1, 1)),
+        scaler_mhz.transform(data[:, 1].reshape(-1, 1))
+    ))
+
+    # Testsequenzen erstellen
     X, y, timestamps = prepare_sequences(data_scaled, df_filtered['timestamp'].values, 20)
-    
-    # Use last 20% of data for testing
     test_split = int(len(X) * 0.8)
-    X_test = X[test_split:]
-    y_test = y[test_split:]
-    timestamps_test = timestamps[test_split:]
+    X_test, y_test, timestamps_test = X[test_split:], y[test_split:], timestamps[test_split:]
+
+    # Calculate mean MHz before making predictions
+    mean_mhz = df['avg_mhz'].mean()
     
-    print("\nMaking predictions and plotting results...")
+    print("\nErstelle Vorhersagen...")
     predictions, y_test, future_predictions = make_predictions(
-        model, scaler, X_test, y_test, timestamps_test)
-    
-    print("\nTraining completed! Check 'temperature_prediction.png' for results.")
-    print(f"Forecasted {len(future_predictions)} steps into the future.")
+        model, 
+        (scaler_temp, scaler_mhz), 
+        X_test, 
+        y_test, 
+        timestamps_test,
+        mean_mhz
+    )
+
+    print("\nAnalysis complete!")
+    print(f"Future predictions generated: {len(future_predictions)} steps")
+    print("Results have been saved to 'temperature_prediction.png'")
+    print("="*50)
