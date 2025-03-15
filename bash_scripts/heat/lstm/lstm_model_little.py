@@ -6,6 +6,8 @@ from tensorflow.keras.layers import LSTM, Dense
 from tensorflow.keras.optimizers import Adam
 import matplotlib.pyplot as plt
 from datetime import timedelta
+import os
+import getpass
 
 # intense_ratio = 0.01 # less intense training
 intense_ratio = 0.0001 # more intense training 
@@ -156,8 +158,15 @@ def make_predictions(model, scaler, X_test, y_test, timestamps_test, mean_mhz):
     plt.legend()
     plt.grid(True)
     plt.gcf().autofmt_xdate()
-    print("Saving plot to 'graphs/temperature_prediction.png'...")
-    plt.savefig('graphs/temperature_prediction.png')
+    
+    # Get OS user and create dynamic path
+    os_user = getpass.getuser()
+    graph_path = f'graphs/{os_user}'
+    os.makedirs(graph_path, exist_ok=True)
+    save_path = f'{graph_path}/temperature_prediction.png'
+    
+    print(f"Saving plot to '{save_path}'...")
+    plt.savefig(save_path)
     plt.close()
 
     return predictions, y_test, future_pred
