@@ -114,13 +114,78 @@ def train_lstm_with_regressor(df, regressor_col, sequence_length=60):
     return model, (temp_scaler, reg_scaler), history
 
 if __name__ == "__main__":
-    # Load data
-    df = pd.read_csv('data/temp_log.csv', parse_dates=['timestamp'])
+    print("\nLoading data...")
+    df = pd.read_csv('data/raw/temp_log_2.csv', parse_dates=['timestamp'])
     
-    # Example usage of basic LSTM
+    print("\nTraining basic LSTM model...")
     model, scaler, history = train_basic_lstm(df)
     
-    # Example usage of LSTM with regressor
-    # Assuming we create a time-based feature
-    df['hour'] = df['timestamp'].dt.hour
-    model_reg, scalers, history_reg = train_lstm_with_regressor(df, 'hour')
+    print("\nTraining LSTM model with CPU metrics...")
+    # Train with CPU MHz as regressor
+    print("\nTraining with CPU MHz as regressor...")
+    model_mhz, scalers_mhz, history_mhz = train_lstm_with_regressor(df, 'MHz')
+    
+    # Train with CPU load as regressor
+    print("\nTraining with CPU load as regressor...")
+    model_load, scalers_load, history_load = train_lstm_with_regressor(df, 'cpu_load_percent')
+    
+    # Train with both CPU metrics
+    print("\nTraining with both CPU metrics...")
+    # Prepare data for combined features
+    temp_data = df['temp'].values.reshape(-1, 1)
+    mhz_data = df['MHz'].values.reshape(-1, 1)
+    load_data = df['cpu_load_percent'].values.reshape(-1, 1)
+    
+    # Scale all features
+    temp_scaler = MinMaxScaler()
+    mhz_scaler = MinMaxScaler()
+    load_scaler = MinMaxScaler()
+    
+    temp_scaled = temp_scaler.fit_transform(temp_data)
+    mhz_scaled = mhz_scaler.fit_transform(mhz_data)
+    load_scaled = load_scaler.fit_transform(load_data)
+    
+    # Combine all features
+    combined_data = np.hstack((temp_scaled, mhz_scaled, load_scaled))
+    
+    # Create sequences for combined features
+    sequence_length = 60
+    X, y = [], []
+    for i in range(len(combined_data) - sequence_length):
+        X.append(combined_data[i:(i + sequence_length)])
+        y.append(temp_scaled[i + sequence_length])
+    
+    X = np.array(X)
+    y = np.array(y)
+    
+    # Split data as before
+    train_size = int(len(X) * 0.5)
+    val_size = int(len(X) * 0.3)
+    
+    X_train = X[:train_size]
+    y_train = y[:train_size]
+    X_val = X[train_size:train_size+val_size]
+    y_val = y[train_size:train_size+val_size]
+    X_test = X[train_size+val_size:]
+    y_test = y[train_size+val_size:]
+    
+    # Build and train model with all features
+    model_combined = Sequential([
+        LSTM(50, activation='relu', input_shape=(sequence_length, 3)),
+        Dense(1)
+    ])
+    
+    model_combined.compile(optimizer=Adam(learning_rate=0.001), loss='mse')
+    
+    history_combined = model_combined.fit(
+        X_train, y_train,
+        validation_data=(X_val, y_val),
+        epochs=50,
+        batch_size=32,
+        verbose=1
+    )
+    
+    test_loss = model_combined.evaluate(X_test, y_test, verbose=0)
+    print(f'Combined features test MSE: {test_loss}')
+    
+    print("\nTraining completed!")
