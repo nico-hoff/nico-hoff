@@ -1,6 +1,6 @@
 #!/bin/bash
 # Log file where CSV rows will be appended
-LOGFILE="/home/pi/Desktop/nico-hoff/bash_scripts/heat/data/temp_log.csv"
+LOGFILE="/home/pi/Desktop/nico-hoff/bash_scripts/heat/data/raw/temp_log.csv"
 
 # Ensure the CSV file has a header if it doesn't exist
 if [ ! -f "$LOGFILE" ]; then
