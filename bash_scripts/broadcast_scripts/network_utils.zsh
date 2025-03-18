@@ -209,8 +209,8 @@ cmd_scan() {
   
   wait
   
-  # Sort results by hostname ascending and display
-  sort -t'|' -k2,2 "$temp_file" | while IFS="|" read -r ip name time mac; do
+  # Sort results by hostname ascending (case-insensitive)
+  LC_ALL=C sort -t'|' -k2,2 -f "$temp_file" | while IFS="|" read -r ip name time mac; do
     printf "%-16s %-40s %-10s %-15s\n" "$ip" "$name" "$time" "$mac"
   done
   
