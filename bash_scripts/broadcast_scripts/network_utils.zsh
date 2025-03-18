@@ -44,49 +44,50 @@ print_colored() {
 
 # Function to get network information
 get_network_info() {
-  # Detect default gateway and network interface
-  gateway=$(route -n get default 2>/dev/null | awk '/gateway: / {print $2}')
-  interface=$(route -n get default 2>/dev/null | awk '/interface: / {print $2}')
+  if route -n get default 2>/dev/null | grep -q "gateway:"; then
+    gateway=$(route -n get default 2>/dev/null | awk '/gateway: / {print $2}')
+    interface=$(route -n get default 2>/dev/null | awk '/interface: / {print $2}')
+    local_ip=$(ifconfig "$interface" 2>/dev/null | awk '/inet / {print $2; exit}')
+    netmask_hex=$(ifconfig "$interface" 2>/dev/null | awk '/inet / {print $4; exit}')
+    broadcast=$(ifconfig "$interface" 2>/dev/null | awk '/inet / {print $6; exit}')
+    cidr=0
+    hex=$(echo "$netmask_hex" | sed 's/^0[xX]//')
+    for (( i=0; i<${#hex}; i++ )); do
+      digit=${hex:$i:1}
+      case "$digit" in
+        [Ff]) bits=4 ;;
+        [Ee]) bits=3 ;;
+        [Dd]) bits=3 ;;
+        [Cc]) bits=2 ;;
+        [Bb]) bits=3 ;;
+        [Aa]) bits=2 ;;
+        [9]) bits=2 ;;
+        [8]) bits=1 ;;
+        [7]) bits=3 ;;
+        [6]) bits=2 ;;
+        [5]) bits=2 ;;
+        [4]) bits=1 ;;
+        [3]) bits=2 ;;
+        [2]) bits=1 ;;
+        [1]) bits=1 ;;
+        [0]) bits=0 ;;
+        *) bits=0 ;;
+      esac
+      cidr=$((cidr+bits))
+    done
+  else
+    # Fallback for Linux (Raspberry Pi / Ubuntu)
+    gateway=$(ip route | awk '/default/ {print $3; exit}')
+    interface=$(ip route | awk '/default/ {print $5; exit}')
+    local_ip=$(ip addr show "$interface" | awk '/inet / {print $2; exit}' | cut -d'/' -f1)
+    cidr=$(ip addr show "$interface" | awk '/inet / {print $2; exit}' | cut -d'/' -f2)
+    broadcast=$(ip addr show "$interface" | awk '/brd/ {print $4; exit}')
+    netmask_hex="N/A"
+  fi
   
-  # Extract local IP, netmask (hex), and broadcast from ifconfig
-  local_ip=$(ifconfig "$interface" 2>/dev/null | awk '/inet / {print $2; exit}')
-  netmask_hex=$(ifconfig "$interface" 2>/dev/null | awk '/inet / {print $4; exit}')
-  broadcast=$(ifconfig "$interface" 2>/dev/null | awk '/inet / {print $6; exit}')
-  
-  # Convert hex netmask to CIDR notation
-  cidr=0
-  hex=$(echo "$netmask_hex" | sed 's/^0[xX]//')
-  for (( i=0; i<${#hex}; i++ )); do
-    digit=${hex:$i:1}
-    case "$digit" in
-      [Ff]) bits=4 ;;
-      [Ee]) bits=3 ;;
-      [Dd]) bits=3 ;;
-      [Cc]) bits=2 ;;
-      [Bb]) bits=3 ;;
-      [Aa]) bits=2 ;;
-      [9]) bits=2 ;;
-      [8]) bits=1 ;;
-      [7]) bits=3 ;;
-      [6]) bits=2 ;;
-      [5]) bits=2 ;;
-      [4]) bits=1 ;;
-      [3]) bits=2 ;;
-      [2]) bits=1 ;;
-      [1]) bits=1 ;;
-      [0]) bits=0 ;;
-      *) bits=0 ;;
-    esac
-    cidr=$((cidr+bits))
-  done
-  
-  # Compute network prefix
   network_prefix=$(echo "$local_ip" | awk -F. '{print $1"."$2"."$3}')
-  
-  # Calculate number of hosts in subnet
   num_hosts=$((2**(32-cidr)))
   
-  # Return variables in an associative array-like format
   echo "interface=$interface"
   echo "gateway=$gateway"
   echo "local_ip=$local_ip"
@@ -208,8 +209,8 @@ cmd_scan() {
   
   wait
   
-  # Sort results by IP and display
-  sort -t. -k1,1n -k2,2n -k3,3n -k4,4n "$temp_file" | while IFS="|" read -r ip name time mac; do
+  # Sort results by hostname ascending and display
+  sort -t'|' -k2,2 "$temp_file" | while IFS="|" read -r ip name time mac; do
     printf "%-16s %-40s %-10s %-15s\n" "$ip" "$name" "$time" "$mac"
   done
   
@@ -937,4 +938,4 @@ main() {
 }
 
 # Run main function with all arguments
-main "$@" 
+main "$@"
