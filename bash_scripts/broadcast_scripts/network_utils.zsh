@@ -788,58 +788,53 @@ cmd_monitor() {
 cmd_speed() {
   print_colored "blue" "\n=== Network Speed Test ==="
   
-  # Check if curl is installed
   if ! command -v curl >/dev/null 2>&1; then
     print_colored "red" "Error: curl is not installed. Please install it to use this feature."
     return 1
   fi
   
-  # Test files of different sizes
-  local sizes=("10MB" "100MB")
+  # Remove comma from array definitions
+  local sizes=("10MB" "100MB" "1GB" "10GB")
   local test_urls=(
     "http://speedtest.ftp.otenet.gr/files/test10Mb.db"
     "http://speedtest.ftp.otenet.gr/files/test100Mb.db"
+    "http://speedtest.ftp.otenet.gr/files/test1Gb.db"
+    "http://speedtest.ftp.otenet.gr/files/test10Gb.db"
   )
   
-  # Use 1-indexed loop for zsh arrays
-  for i in {1..2}; do
+  for (( i=1; i<=${#sizes[@]}; i++ )); do
     local size="${sizes[$i]}"
     local url="${test_urls[$i]}"
     
     print_colored "cyan" "\nTesting download speed (${size} file)..."
     local start_time=$(date +%s.%N)
     curl -s -o /dev/null "$url" &
-    curl_pid=$!
+    local curl_pid=$!
     
-    # Show progress
     local elapsed=0
     while kill -0 $curl_pid 2>/dev/null; do
-      elapsed=$(echo "$(date +%s.%N) - $start_time" | LC_ALL=C bc -l)
+      elapsed=$(echo "$(date +%s.%N) - $start_time" | LC_NUMERIC=C bc -l)
       printf "\rDownloading... %.1f seconds elapsed" "$elapsed"
       sleep 0.5
     done
     
     local end_time=$(date +%s.%N)
-    local download_time=$(echo "$end_time - $start_time" | LC_ALL=C bc -l)
+    local download_time=$(echo "$end_time - $start_time" | LC_NUMERIC=C bc -l)
     
-    # Prevent division by zero
-    if (( $(echo "$download_time <= 0" | LC_ALL=C bc -l) )); then
+    if (( $(echo "$download_time <= 0" | LC_NUMERIC=C bc -l) )); then
       download_time=0.001
     fi
     
-    # Calculate speed in Mbps
     local size_mb=${size%MB}
-    local speed_mbps=$(echo "scale=2; $size_mb * 8 / $download_time" | LC_ALL=C bc -l)
+    local speed_mbps=$(echo "scale=2; $size_mb * 8 / $download_time" | LC_NUMERIC=C bc -l)
     
     printf "\rDownload speed: \033[0;32m%.2f Mbps\033[0m (%.2f seconds)                   \n" "$speed_mbps" "$download_time"
     
-    # Exit after first test if it takes too long
-    if (( $(echo "$download_time > 10" | LC_ALL=C bc -l) )); then
+    if (( $(echo "$download_time > 10" | LC_NUMERIC=C bc -l) )); then
       break
     fi
   done
   
-  # Print ping statistics to common servers
   print_colored "cyan" "\nPing statistics:"
   for server in "8.8.8.8" "1.1.1.1" "208.67.222.222"; do
     ping -c 3 "$server" 2>/dev/null | grep "avg" | sed "s/.*= //g" | sed "s/\//, /g" | awk '{print "  '$server': min/avg/max = "$1"/"$2"/"$3" ms"}'
