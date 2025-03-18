@@ -788,56 +788,86 @@ cmd_monitor() {
 cmd_speed() {
   print_colored "blue" "\n=== Network Speed Test ==="
   
-  # Check if curl is installed
   if ! command -v curl >/dev/null 2>&1; then
     print_colored "red" "Error: curl is not installed. Please install it to use this feature."
     return 1
   fi
-  
-  # Test files of different sizes
-  local sizes=("10MB" "100MB")
-  local test_urls=(
-    "http://speedtest.ftp.otenet.gr/files/test10Mb.db"
-    "http://speedtest.ftp.otenet.gr/files/test100Mb.db"
+
+  # Use Cloudflare's speed test files
+  local sizes=(
+    "100KB|https://speed.cloudflare.com/100kb.bin"
+    "1MB|https://speed.cloudflare.com/1mb.bin"
+    "10MB|https://speed.cloudflare.com/10mb.bin"
+    "100MB|https://speed.cloudflare.com/100mb.bin"
   )
   
-  for i in {0..1}; do
-    local size="${sizes[$i]}"
-    local url="${test_urls[$i]}"
+  # Create temp directory for downloads
+  local temp_dir=$(mktemp -d)
+  trap 'rm -rf "$temp_dir"' EXIT
+  
+  for size_url in "${sizes[@]}"; do
+    local size="${size_url%|*}"
+    local url="${size_url#*|}"
+    local output_file="$temp_dir/speedtest_$size"
     
-    print_colored "cyan" "\nTesting download speed ($size file)..."
-    local start_time=$(date +%s.%N)
-    curl -s -o /dev/null "$url" &
-    curl_pid=$!
+    print_colored "cyan" "\nTesting download speed (${size} file)..."
     
-    # Show progress
-    local elapsed=0
-    while kill -0 $curl_pid 2>/dev/null; do
-      elapsed=$(echo "$(date +%s.%N) - $start_time" | bc)
-      printf "\rDownloading... %.1f seconds elapsed" $elapsed
-      sleep 0.5
+    # Perform 3 downloads and take the average
+    local total_speed=0
+    local successful_tests=0
+    
+    for ((test=1; test<=3; test++)); do
+      printf "\nTest $test of 3: "
+      
+      # Clear disk cache (requires sudo)
+      if [[ $EUID -eq 0 ]]; then
+        if [[ "$(uname)" == "Darwin" ]]; then
+          sudo purge >/dev/null 2>&1
+        else
+          sudo sh -c 'sync; echo 3 > /proc/sys/vm/drop_caches' >/dev/null 2>&1
+        fi
+      fi
+      
+      # Download file and measure speed
+      local result=$(curl -w "%{speed_download}" -s -o "$output_file" "$url" 2>/dev/null)
+      if [[ $? -eq 0 && -n "$result" && "$result" != "0" ]]; then
+        local speed_mbps=$(echo "scale=2; $result / 125000" | bc)  # Convert B/s to Mbps
+        printf "%.2f Mbps" "$speed_mbps"
+        total_speed=$(echo "scale=2; $total_speed + $speed_mbps" | bc)
+        successful_tests=$((successful_tests + 1))
+      else
+        printf "Failed"
+      fi
+      
+      # Clean up downloaded file
+      rm -f "$output_file"
+      
+      # Small delay between tests
+      sleep 1
     done
     
-    local end_time=$(date +%s.%N)
-    local download_time=$(echo "$end_time - $start_time" | bc)
-    
-    # Calculate speed in Mbps
-    local size_mb=${size%MB}
-    local speed_mbps=$(echo "scale=2; $size_mb * 8 / $download_time" | bc)
-    
-    printf "\rDownload speed: \033[0;32m%.2f Mbps\033[0m (%.2f seconds)                   \n" $speed_mbps $download_time
-    
-    # Exit after first test if it takes too long
-    if (( $(echo "$download_time > 10" | bc -l) )); then
-      break
+    # Calculate and display average speed
+    if [[ $successful_tests -gt 0 ]]; then
+      local avg_speed=$(echo "scale=2; $total_speed / $successful_tests" | bc)
+      printf "\nAverage download speed: \033[0;32m%.2f Mbps\033[0m\n" "$avg_speed"
+    else
+      print_colored "red" "\nAll tests failed for this file size."
     fi
   done
   
-  # Print ping statistics to common servers
-  print_colored "cyan" "\nPing statistics:"
-  for server in "8.8.8.8" "1.1.1.1" "208.67.222.222"; do
-    ping -c 3 "$server" 2>/dev/null | grep "avg" | sed "s/.*= //g" | sed "s/\//, /g" | awk '{print "  '$server': min/avg/max = "$1"/"$2"/"$3" ms"}'
+  # Test latency to common servers
+  print_colored "cyan" "\nTesting latency..."
+  local servers=("8.8.8.8" "1.1.1.1" "9.9.9.9")
+  
+  for server in "${servers[@]}"; do
+    local ping_result=$(ping -c 5 -q "$server" 2>/dev/null | tail -1)
+    if [[ -n "$ping_result" ]]; then
+      local stats=$(echo "$ping_result" | awk -F/ '{printf "min/avg/max = %.1f/%.1f/%.1f ms", $4,$5,$6}')
+      echo "  $server: $stats"
+    fi
   done
+  
+  echo ""
 }
 
 # Display help
