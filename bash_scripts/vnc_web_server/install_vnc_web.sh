@@ -32,10 +32,11 @@ fi
 INSTALL_USER=$(whoami)
 INSTALL_HOME=$(eval echo ~$INSTALL_USER)
 INSTALL_IP=$(hostname -I | awk '{print $1}')
+INSTALL_IP=127.0.0.1
 
 echo "Detected user: $INSTALL_USER"
 echo "Detected home directory: $INSTALL_HOME"
-
+echo "IP for novnc: $INSTALL_IP"
 
 echo "Setting up VNC and noVNC services..."
 # Modify and copy x11vnc.service
