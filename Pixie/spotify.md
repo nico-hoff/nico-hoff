@@ -41,5 +41,5 @@ export PATH=$PATH:$HOME/.cargo/bin
 ## 3. Kompiliertes Binary verwenden:
 
 ```bash
-librespot --name "Pi" —-bitrate 320 --enable-volume-normalisation —-initial-volume 60
+librespot --name "Pixie" —-bitrate 320 --enable-volume-normalisation —-initial-volume 60
 ```

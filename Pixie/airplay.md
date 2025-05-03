@@ -70,6 +70,11 @@ sudo nano /etc/shairport-sync.conf
 Suche den alsa-Block und ersetze ihn durch:
 
 ```
+gernal = {
+	name = "Pixie"
+	# Other Code
+}
+# Other Code
 alsa = {
     output_device = "plughw:CARD=Headphones,DEV=0";
     mixer_control_name = "PCM";
@@ -103,7 +108,7 @@ amixer -c Headphones
 
 ---
 
-## 🔍 Weitere Optimierungen (optional)
+## 🔍 Weitere Optimierungen (optional - noch nicht getestet)
 - Samplerate fixieren:
 
 ```
