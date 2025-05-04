@@ -1,0 +1,16 @@
+[Unit]
+Description=Bluetooth Audio Sink Service
+After=bluetooth.service pulseaudio.service
+Requires=bluetooth.service
+
+[Service]
+Type=simple
+ExecStartPre=/bin/sleep 2
+ExecStart=/bin/bash -c 'bluetoothctl power on && bluetoothctl discoverable on && bluetoothctl pairable on && bluetoothctl agent NoInputNoOutput && bluetoothctl default-agent'
+ExecStartPost=/bin/bash -c 'hciconfig hci0 class 0x240414'
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target 

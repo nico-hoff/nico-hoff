@@ -1,0 +1,11 @@
+[Unit]
+Description=Ensure Master Volume is at 100%
+After=pulseaudio-system.service
+
+[Service]
+Type=oneshot
+ExecStart=/home/pi/bin/ensure-master-volume.sh
+User=pi
+
+[Install]
+WantedBy=multi-user.target 

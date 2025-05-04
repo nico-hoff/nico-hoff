@@ -1,0 +1,14 @@
+[Unit]
+Description=Bluetooth A2DP Agent Service
+After=bluetooth.service pulseaudio.service bluetooth-boot.service
+Requires=bluetooth.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/bt-agent -c NoInputNoOutput
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+
+[Install]
+WantedBy=multi-user.target 

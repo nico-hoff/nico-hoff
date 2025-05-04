@@ -1,0 +1,12 @@
+[Unit]
+Description=PulseAudio Sound System (System-wide)
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/pulseaudio --system --disallow-exit --disallow-module-loading --log-target=journal
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target 

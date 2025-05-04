@@ -1,0 +1,15 @@
+[Unit]
+Description=Librespot Spotify Connect client
+After=network.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+Group=audio
+ExecStart=/home/pi/.cargo/bin/librespot --name "Pixie" --bitrate 320 --enable-volume-normalisation --initial-volume 60
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target 

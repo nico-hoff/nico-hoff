@@ -1,0 +1,15 @@
+#!/usr/bin/pulseaudio -nF
+
+# Load system protocol
+load-module module-native-protocol-unix auth-anonymous=1 auth-group=audio socket=/tmp/pulse-system
+
+# Allow apps to find the daemon
+load-module module-default-device-restore
+load-module module-always-sink
+load-module module-suspend-on-idle timeout=1
+
+# Set default sink to analog output
+set-default-sink alsa_output.platform-bcm2835_audio.stereo-fallback
+
+# Keep sink volume at 100%
+set-sink-volume alsa_output.platform-bcm2835_audio.stereo-fallback 100% 
