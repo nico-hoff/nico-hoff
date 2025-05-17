@@ -1,5 +1,5 @@
 
-venv/**
+**/venv/**
 *.log 
 .env
 .DS_Store
@@ -7,3 +7,11 @@ venv/**
 bash_scripts/heat/data/**/*.csv
 
 !.gitkeep
+
+*.pyc
+*.pyo
+*.pyd
+*.pyw
+*.pyz
+*.pywz
+*.pyzw
