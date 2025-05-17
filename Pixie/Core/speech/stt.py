@@ -1,5 +1,5 @@
 import logging
-import whisper
+import whisperx
 import numpy as np
 import tempfile
 import wave
@@ -16,7 +16,7 @@ class SpeechToText:
             model_name (str): Whisper model name (tiny, base, small, medium, large)
         """
         logger.info(f"Loading Whisper model: {model_name}")
-        self.model = whisper.load_model(model_name)
+        self.model = whisperx.load_model(model_name)
         logger.info("Whisper model loaded successfully")
         
     async def transcribe(self, audio_data):

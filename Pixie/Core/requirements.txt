@@ -1,8 +1,8 @@
 langchain>=0.1.0
 langchain-community>=0.0.10
 pyaudio>=0.2.13
-vosk>=0.3.45
-openai-whisper>=20231117
+vosk
+whisper>=1.1.10
 pyttsx3>=2.90
 python-dotenv>=1.0.0
 faiss-cpu>=1.7.4
