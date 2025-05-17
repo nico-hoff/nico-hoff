@@ -60,9 +60,9 @@ func runSetupCmd(cmd *cobra.Command, args []string) {
 
 	// Install helper scripts
 	fmt.Println("Installing helper scripts...")
-	copyFile("scripts/ensure-master-volume.sh", "/home/pi/bin/")
-	copyFile("scripts/audio-status.sh", "/home/pi/bin/")
-	copyFile("scripts/audio-control.sh", "/home/pi/bin/")
+	copyFile("impl/shell/scripts/ensure-master-volume.sh", "/home/pi/bin/")
+	copyFile("impl/shell/scripts/audio-status.sh", "/home/pi/bin/")
+	copyFile("impl/shell/scripts/audio-control.sh", "/home/pi/bin/")
 	os.Chmod("/home/pi/bin/ensure-master-volume.sh", 0755)
 	os.Chmod("/home/pi/bin/audio-status.sh", 0755)
 	os.Chmod("/home/pi/bin/audio-control.sh", 0755)
