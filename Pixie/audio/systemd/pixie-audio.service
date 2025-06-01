@@ -1,0 +1,18 @@
+[Unit]
+Description=Pixie Audio System
+After=network.target bluetooth.target
+Requires=pulseaudio-system.service
+Wants=shairport-sync.service librespot.service bluetooth-boot.service
+
+[Service]
+Type=simple
+User=root
+ExecStart=/usr/local/bin/pixie-audio daemon
+Restart=always
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+SyslogIdentifier=pixie-audio
+
+[Install]
+WantedBy=multi-user.target 

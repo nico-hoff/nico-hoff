@@ -1,13 +1,13 @@
 [Unit]
-Description=Librespot Spotify Connect client
-After=network.target
+Description=Librespot Spotify Connect
+After=pulseaudio-system.service
 Wants=network-online.target
+After=network-online.target
 
 [Service]
 Type=simple
-User=pi
-Group=audio
-ExecStart=/home/pi/.cargo/bin/librespot --name "Pixie" --bitrate 320 --enable-volume-normalisation --initial-volume 60
+User=root
+ExecStart=/usr/local/bin/librespot --name "Pixie Audio" --backend pulseaudio --device default --bitrate 320 --enable-volume-normalisation --volume-ctrl linear --initial-volume 100
 Restart=always
 RestartSec=10
 
